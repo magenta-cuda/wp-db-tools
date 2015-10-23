@@ -10,7 +10,8 @@ License URI: http://www.gnu.org/licenses/gpl-2.0.html
 WordPress database tools for debugging.
 
 == Description ==
-These tools lets you do a quick backup of individual MySQL tables by duplication into the same database.
+These tools are intended to be used by WordPress developers for testing and debugging.
+The backup tool lets you do a quick backup of individual MySQL tables by duplication into the same database, i.e. using "CREATE TABLE copy LIKE orig; INSERT INTO copy SELECT * FROM orig;".
 Useful for testing when you know only some tables will be changed so you don't have to save and restore the entire database.
 Most useful for repeated testing, i.e. backup table(s), test, restore table(s), test, restore table(s), ... test, restore table(s), delete backup.
 Please visit [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/) for a very quick introduction.
@@ -24,7 +25,7 @@ Please visit [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/) for 
 == Frequently Asked Questions ==
    
 == Screenshots ==
-1. Backup Tables
+1. Backup Tool
 
 == Changelog ==
 
