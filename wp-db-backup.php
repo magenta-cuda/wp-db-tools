@@ -119,7 +119,7 @@ add_action( 'admin_menu', function( ) use ( $options ) {
 ?>
 <div style="padding:10px 20px;">
     <form id="mc_tables">
-    <fieldset id="mc_table_fields" style="border:2px solid black;padding:10px;"<?php echo $backup_tables ? ' disabled' : ''; ?>>
+    <fieldset id="mc_table_fields" class="mc_db_tools_pane"<?php echo $backup_tables ? ' disabled' : ''; ?>>
         <legend>WordPress Tables for Backup</legend>
         <table class="mc_table_table">
 <?php
@@ -168,14 +168,14 @@ EOD;
 <?php
         } else {
 ?>
-    <div style="border:2px solid red;padding:10px 20px;margin:20px;">
+    <div class="mc_db_tools_pane mc_db_toos_error_pane">
     The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
     <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
     </div>
 <?php
         }
 ?>
-    <fieldset id="mc_db_tools_options" style="border:2px solid black;padding:10px;">
+    <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
         <legend>Options</legend>
         <label for="mc_backup_suffix">Backup Suffix</label>
         <input type="text" name="mc_backup_suffix" id="mc_backup_suffix" value="<?php echo $options[ 'orig_suffix' ]; ?>" size="20">
@@ -200,7 +200,7 @@ EOD;
 <?php
         }
 ?>
-    <div style="border:2px solid black;margin:20px;padding:20px;">
+    <div id="mc_db_tools_log" class="mc_db_tools_pane">
         <h3>Log</h3>
         <pre id="mc_status"></pre>
     </div>
