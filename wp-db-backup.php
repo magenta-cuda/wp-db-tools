@@ -209,31 +209,32 @@ if ( defined( 'DOING_AJAX' ) ) {
         
         $messages = [ ];
         # extract only table names from HTTP query parameters
-        $tables = array_keys( array_filter( $_POST, function( $value ) {
+        $tables      = array_keys( array_filter( $_POST, function( $value ) {
             return $value === MC_BACKUP;
         } ) );
         error_log( '##### mc_backup_tables():$tables=' . print_r( $tables, true ) );
+        $suffix      = $options[ 'orig_suffix' ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
-        $status = MC_SUCCESS;
+        $status      = MC_SUCCESS;
         foreach ( $tables as $table ) {
             # rename original table to use as backup
-            if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # create new table with original name and schema
-            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # copy backup into new table
-            if ( ddt_wpdb_query( "INSERT INTO $table SELECT * FROM $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "INSERT INTO $table SELECT * FROM {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
         }
         $messages[ ] = $action . ': ' . $status;
-        $messages = ddt_format_messages( $messages, $action );
+        $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
         if ( !empty( $wp_db_diff_included ) ) {
             ddt_wp_db_diff_start_session( );
@@ -244,12 +245,13 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
     
     add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $options, $wp_db_diff_included ) {
-        $action = 'restore tables';
+        $action      = 'restore tables';
         # get names of tables that have a backup copy
-        $tables = ddt_get_backup_tables( $options );
-        $messages = [ ];
+        $tables      = ddt_get_backup_tables( $options );
+        $suffix      = $options[ 'orig_suffix' ];
+        $messages    = [ ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
-        $status = MC_SUCCESS;
+        $status      = MC_SUCCESS;
         # restore all tables that have a backup copy
         foreach ( $tables as $table ) {
             # drop the table to be restored
@@ -258,18 +260,18 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
             # create a new empty table with the database schema of the corresponding backup table
-            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # copy the rows from the corresponding backup table into the newly created table
-            if ( ddt_wpdb_query( "INSERT $table SELECT * FROM $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "INSERT $table SELECT * FROM {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
         }
         $messages[ ] = $action . ': ' . $status;
-        $messages = ddt_format_messages( $messages, $action );
+        $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
         if ( !empty( $wp_db_diff_included ) ) {
             ddt_wp_db_diff_end_session( );
@@ -281,24 +283,25 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
     
     add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $options, $wp_db_diff_included ) {
-        $action = 'delete tables';
-        $tables = ddt_get_backup_tables( $options );
+        $action   = 'delete tables';
+        $suffix   = $options[ 'orig_suffix' ];
+        $tables   = ddt_get_backup_tables( $options );
         $messages = [ ];
         if ( $tables ) {
-            $messages[ ] = $action . ': ' . implode(  $options[ 'orig_suffix' ] . ', ', $tables ) . $options[ 'orig_suffix' ];
+            $messages[ ] = $action . ': ' . implode(  $suffix . ', ', $tables ) . $suffix;
         } else {
             $messages[ ] = $action . ': ';
         }
         $status = MC_SUCCESS;
         foreach ( $tables as $table ) {
             # drop the backup table
-            if ( ddt_wpdb_query( "DROP TABLE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "DROP TABLE {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
         }
         $messages[ ] = $action . ': ' . $status;
-        $messages = ddt_format_messages( $messages, $action );
+        $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
         if ( !empty( $wp_db_diff_included ) ) {
             ddt_wp_db_diff_end_session( );
