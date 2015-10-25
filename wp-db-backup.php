@@ -54,21 +54,29 @@ if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) 
     $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
 }
 
-function ddt_get_backup_tables( $options ) {
+# The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
+
+function ddt_get_backup_tables( $options, &$orig_tables = NULL ) {
     global $wpdb;
-    $tables = $wpdb->get_col( "show tables" );
     # extract only table names with the backup suffix and remove the backup suffix
-    $suffix     = $options[ 'orig_suffix' ];
-    $suffix_len = strlen( $suffix );
-    $tables = array_filter( array_map( function( $table ) use ( $suffix, $suffix_len ) {
+    $tables        = $wpdb->get_col( "show tables" );
+    $suffix        = $options[ 'orig_suffix' ];
+    $suffix_len    = strlen( $suffix );
+    if ( is_array( $orig_tables ) ) {
+        $orig_tables = [ ];
+    }
+    $backup_tables = array_filter( array_map( function( $table ) use ( $suffix, $suffix_len, &$orig_tables ) {
         if ( substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) === 0 ) {
             return substr( $table, 0, -$suffix_len );
         } else {
+            if ( is_array( $orig_tables ) ) {
+                $orig_tables[ ] = $table;
+            }
             return FALSE;
         }
     }, $tables ) );
     error_log( '##### ddt_get_backup_tables():return=' . print_r( $tables, true ) );
-    return $tables;
+    return $backup_tables;
 }
     
 add_action( 'admin_menu', function( ) use ( $options ) {
@@ -85,11 +93,26 @@ add_action( 'admin_menu', function( ) use ( $options ) {
             return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
         } ) );
         error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
-        $tables_orig = ddt_get_backup_tables( $options );
+        $orig_tables = [ ];
+        $backup_tables = ddt_get_backup_tables( $options, $orig_tables );
+        error_log( '##### add_menu_page():callback():$backup_tables=' . print_r( $backup_tables, true ) );
+        error_log( '##### add_menu_page():callback():$orig_tables=' . print_r( $orig_tables, true ) );
+        foreach ( $backup_tables as $table ) {
+            if ( !in_array( $table, $orig_tables ) ) {
+?>
+<div style="border:2px solid red;padding:10px 20px;margin:20px;">
+<h2>Database Developer's Tools: Backup Tool</h2>
+The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
+<?php echo "{$table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
+</div>
+<?php
+                return;
+            }
+        }
 ?>
 <div style="padding:10px 20px;">
     <form id="mc_tables">
-    <fieldset id="mc_table_fields" style="border:2px solid black;padding:10px;"<?php echo $tables_orig ? ' disabled' : ''; ?>>
+    <fieldset id="mc_table_fields" style="border:2px solid black;padding:10px;"<?php echo $backup_tables ? ' disabled' : ''; ?>>
         <legend>WordPress Tables for Backup</legend>
         <table class="mc_table_table">
 <?php
@@ -116,7 +139,7 @@ add_action( 'admin_menu', function( ) use ( $options ) {
             }
             # create HTML input element with name = database table name and value = $mc_backup and text = database table name
             # if table is already backed up set the checked attribute
-            $checked = in_array( $table, $tables_orig ) ? 'checked' : '';
+            $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
             echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="mc_table_checkbox" value="$mc_backup"$checked>
@@ -148,9 +171,9 @@ EOD;
 ?>
     </form>
     <div style="padding:20px;">
-        <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $tables_orig ) { echo ' disabled'; } ?>>Backup Tables</button>
-        <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$tables_orig ) { echo 'disabled';  } ?>>Restore Tables</button>
-        <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$tables_orig ) { echo 'disabled';  } ?>>Delete Backup</button>
+        <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
+        <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
+        <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>
     </div>
     <div style="border:2px solid black;margin:20px;padding:20px;">
         <h3>Log</h3>
