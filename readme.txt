@@ -23,6 +23,10 @@ Please visit [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/) for 
 3. Read the tutorial at [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/)
 
 == Frequently Asked Questions ==
+
+= Can this be used for backing up a database? =
+
+No, the backup is done by creating additional tables in the same database so if the database is lost the backup is also lost.
    
 == Screenshots ==
 1. Backup Tool
