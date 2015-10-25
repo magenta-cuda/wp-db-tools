@@ -78,11 +78,28 @@ function ddt_get_backup_tables( $options, &$orig_tables = NULL ) {
     error_log( '##### ddt_get_backup_tables():return=' . print_r( $tables, true ) );
     return $backup_tables;
 }
+
+function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
+    if ( $backup_tables === NULL || $orig_tables === NULL ) {
+        $orig_tables   = [ ];
+        $backup_tables = ddt_get_backup_tables( $options, $orig_tables );
+    }
+    foreach ( $backup_tables as $table ) {
+        if ( !in_array( $table, $orig_tables ) ) {
+            $bad_table = $table;
+            return FALSE;
+        }
+    }
+    return TRUE;
+}
     
 add_action( 'admin_menu', function( ) use ( $options ) {
     
     add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
         global $wpdb;
+?>
+<h2>Database Developer's Tools: Backup Tool</h2>
+<?php
         # get names of all tables in database
         $tables = $wpdb->get_col( "show tables" );
         error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
@@ -97,18 +114,8 @@ add_action( 'admin_menu', function( ) use ( $options ) {
         $backup_tables = ddt_get_backup_tables( $options, $orig_tables );
         error_log( '##### add_menu_page():callback():$backup_tables=' . print_r( $backup_tables, true ) );
         error_log( '##### add_menu_page():callback():$orig_tables=' . print_r( $orig_tables, true ) );
-        foreach ( $backup_tables as $table ) {
-            if ( !in_array( $table, $orig_tables ) ) {
-?>
-<div style="border:2px solid red;padding:10px 20px;margin:20px;">
-<h2>Database Developer's Tools: Backup Tool</h2>
-The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
-<?php echo "{$table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
-</div>
-<?php
-                return;
-            }
-        }
+        $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
+        if ( $backup_suffix_ok ) {
 ?>
 <div style="padding:10px 20px;">
     <form id="mc_tables">
@@ -117,64 +124,82 @@ The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts
         <table class="mc_table_table">
 <?php
         # create a HTML input element embedded in a HTML td element for each database table
-        $mc_backup = MC_BACKUP;
-        $columns = MC_COLS;
-        $max_len = 0;
-        foreach ( $tables as $i => $table ) {
-            if ( ( $len = strlen( $table ) ) > $max_len ) {
-                $max_len = $len;
+            $mc_backup = MC_BACKUP;
+            $columns = MC_COLS;
+            $max_len = 0;
+            foreach ( $tables as $i => $table ) {
+                if ( ( $len = strlen( $table ) ) > $max_len ) {
+                    $max_len = $len;
+                }
             }
-        }
-        error_log( '$max_len=' . $max_len );
-        if ( $max_len > 80 ) {
-            $columns = 1;
-        } else if ( $max_len > 50 ) {
-            $columns = 2;
-        } else if ( $max_len > 40 ) {
-            $columns = 3;
-        }
-        foreach ( $tables as $i => $table ) {
-            if ( $i % $columns === 0 ) {
-                echo '<tr>';
+            error_log( '$max_len=' . $max_len );
+            if ( $max_len > 80 ) {
+                $columns = 1;
+            } else if ( $max_len > 50 ) {
+                $columns = 2;
+            } else if ( $max_len > 40 ) {
+                $columns = 3;
             }
-            # create HTML input element with name = database table name and value = $mc_backup and text = database table name
-            # if table is already backed up set the checked attribute
-            $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
-            echo <<<EOD
+            foreach ( $tables as $i => $table ) {
+                if ( $i % $columns === 0 ) {
+                    echo '<tr>';
+                }
+                # create HTML input element with name = database table name and value = $mc_backup and text = database table name
+                # if table is already backed up set the checked attribute
+                $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
+                echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="mc_table_checkbox" value="$mc_backup"$checked>
                 <label for="$table">$table</label>
             </td>
 EOD;
-            if ( $i % $columns === $columns - 1 ) {
+                if ( $i % $columns === $columns - 1 ) {
+                    echo '</tr>';
+                }
+            }
+            if ( $i % $columns !== $columns - 1 ) {
                 echo '</tr>';
             }
-        }
-        if ( $i % $columns !== $columns - 1 ) {
-            echo '</tr>';
-        }
-        # this form invokes the AJAX action wp_ajax_mc_backup_tables
+            # this form invokes the AJAX action wp_ajax_mc_backup_tables
 ?>
         </table>
         <input type="hidden" name="action" value="mc_backup_tables">
     </fieldset>
 <?php
-        if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+        } else {
 ?>
-    <fieldset id="mc_enable_diff" style="border:2px solid black;padding:10px;">
-        <legend>Options</legend>
-        <input type="checkbox" name="mc_enable_diff" id="mc_enable_diff" value="enabled">
-        <label for="mc_enable_diff">Enable Diff</label>
-    </fieldset>
+    <div style="border:2px solid red;padding:10px 20px;margin:20px;">
+    The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
+    <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
+    </div>
 <?php
         }
 ?>
+    <fieldset id="mc_db_tools_options" style="border:2px solid black;padding:10px;">
+        <legend>Options</legend>
+        <label for="mc_backup_suffix">Backup Suffix</label>
+        <input type="text" name="mc_backup_suffix" id="mc_backup_suffix" value="<?php echo $options[ 'orig_suffix' ]; ?>" size="20">
+<?php
+        if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+?>
+        <label for="mc_enable_diff">Enable Diff</label>
+        <input type="checkbox" name="mc_enable_diff" id="mc_enable_diff" value="enabled">
+<?php
+        }
+?>
+    </fieldset>
     </form>
+<?php
+        if ( $backup_suffix_ok ) {
+?>
     <div style="padding:20px;">
         <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
         <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
         <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>
     </div>
+<?php
+        }
+?>
     <div style="border:2px solid black;margin:20px;padding:20px;">
         <h3>Log</h3>
         <pre id="mc_status"></pre>
