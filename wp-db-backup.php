@@ -200,10 +200,10 @@ EOD;
 <?php
         }
 ?>
-    <div id="mc_db_tools_log" class="mc_db_tools_pane">
-        <h3>Log</h3>
+    <fieldset id="mc_db_tools_log" class="mc_db_tools_pane">
+        <legend>Log</legend>
         <pre id="mc_status"></pre>
-    </div>
+    </fieldset>
 </div>
 <?php
     } );   # add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) {
