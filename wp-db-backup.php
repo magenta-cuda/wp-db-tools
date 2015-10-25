@@ -40,27 +40,28 @@ define( 'MC_BACKUP_PAGE_NAME', 'easy_backup_for_testing' );
 
 define( 'MC_BACKUP', 'mc_backup' );
 
-define( 'MC_ORIG_SUFFIX', '_orig' );   # N.B. no existing table must have a name ending with this suffix
-
 define( 'MC_SUCCESS', 'STATUS:SUCCESS' );
 define( 'MC_FAILURE', 'STATUS:FAILURE' );
 
 define( 'MC_COLS', 4 );
 
-$options = get_option( 'mc-x-wp-db-tools', [ 'hello' => 'hi' ] );
+$options = get_option( 'mc-x-wp-db-tools', [ 'orig_suffix' => '_orig' ] );
+
+# N.B. no existing table must have a name ending with suffix $options[ 'orig_suffix' ]'
 
 $wp_db_diff_included = NULL;
 if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) ) {
     $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
 }
 
-function ddt_get_backup_tables( ) {
+function ddt_get_backup_tables( $options ) {
     global $wpdb;
     $tables = $wpdb->get_col( "show tables" );
     # extract only table names with the backup suffix and remove the backup suffix
-    $suffix_len = strlen( MC_ORIG_SUFFIX );
-    $tables = array_filter( array_map( function( $table ) use ( $suffix_len ) {
-        if ( substr_compare( $table, MC_ORIG_SUFFIX, -$suffix_len, $suffix_len ) === 0 ) {
+    $suffix     = $options[ 'orig_suffix' ];
+    $suffix_len = strlen( $suffix );
+    $tables = array_filter( array_map( function( $table ) use ( $suffix, $suffix_len ) {
+        if ( substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) === 0 ) {
             return substr( $table, 0, -$suffix_len );
         } else {
             return FALSE;
@@ -70,20 +71,21 @@ function ddt_get_backup_tables( ) {
     return $tables;
 }
     
-add_action( 'admin_menu', function( ) {
+add_action( 'admin_menu', function( ) use ( $options ) {
     
-    add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) {
+    add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
         global $wpdb;
         # get names of all tables in database
         $tables = $wpdb->get_col( "show tables" );
         error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
         # remove names of backup tables
-        $suffix_len = strlen( MC_ORIG_SUFFIX );
-        $tables = array_merge( array_filter( $tables, function( $table ) use ( $suffix_len ) {
-            return substr_compare( $table, MC_ORIG_SUFFIX, -$suffix_len, $suffix_len ) !== 0;
+        $suffix     = $options[ 'orig_suffix' ];
+        $suffix_len = strlen( $suffix );
+        $tables = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
+            return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
         } ) );
         error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
-        $tables_orig = ddt_get_backup_tables( );
+        $tables_orig = ddt_get_backup_tables( $options );
 ?>
 <div style="padding:10px 20px;">
     <form id="mc_tables">
@@ -114,7 +116,7 @@ add_action( 'admin_menu', function( ) {
             }
             # create HTML input element with name = database table name and value = $mc_backup and text = database table name
             # if table is already backed up set the checked attribute
-            $checked = in_array( $table, $tables_orig) ? 'checked' : '';
+            $checked = in_array( $table, $tables_orig ) ? 'checked' : '';
             echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="mc_table_checkbox" value="$mc_backup"$checked>
@@ -205,7 +207,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         update_option( 'mc-x-wp-db-tools', $options );
         
-        $messages = array();
+        $messages = [ ];
         # extract only table names from HTTP query parameters
         $tables = array_keys( array_filter( $_POST, function( $value ) {
             return $value === MC_BACKUP;
@@ -215,17 +217,17 @@ if ( defined( 'DOING_AJAX' ) ) {
         $status = MC_SUCCESS;
         foreach ( $tables as $table ) {
             # rename original table to use as backup
-            if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO $table" . MC_ORIG_SUFFIX,      $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # create new table with original name and schema
-            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . MC_ORIG_SUFFIX,          $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # copy backup into new table
-            if ( ddt_wpdb_query( "INSERT INTO $table SELECT * FROM $table" . MC_ORIG_SUFFIX,  $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "INSERT INTO $table SELECT * FROM $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
@@ -241,27 +243,27 @@ if ( defined( 'DOING_AJAX' ) ) {
 
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
     
-    add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $wp_db_diff_included ) {
+    add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $options, $wp_db_diff_included ) {
         $action = 'restore tables';
         # get names of tables that have a backup copy
-        $tables = ddt_get_backup_tables();
-        $messages = array();
+        $tables = ddt_get_backup_tables( $options );
+        $messages = [ ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
         $status = MC_SUCCESS;
         # restore all tables that have a backup copy
         foreach ( $tables as $table ) {
             # drop the table to be restored
-            if ( ddt_wpdb_query( "DROP TABLE $table",                                   $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # create a new empty table with the database schema of the corresponding backup table
-            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . MC_ORIG_SUFFIX,    $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "CREATE TABLE $table LIKE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
             # copy the rows from the corresponding backup table into the newly created table
-            if ( ddt_wpdb_query( "INSERT $table SELECT * FROM $table" . MC_ORIG_SUFFIX, $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "INSERT $table SELECT * FROM $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
@@ -278,19 +280,19 @@ if ( defined( 'DOING_AJAX' ) ) {
 
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
     
-    add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $wp_db_diff_included ) {
+    add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $options, $wp_db_diff_included ) {
         $action = 'delete tables';
-        $tables = ddt_get_backup_tables( );
-        $messages = array();
+        $tables = ddt_get_backup_tables( $options );
+        $messages = [ ];
         if ( $tables ) {
-            $messages[] = $action . ': ' . implode(  MC_ORIG_SUFFIX . ', ', $tables ) . MC_ORIG_SUFFIX;
+            $messages[ ] = $action . ': ' . implode(  $options[ 'orig_suffix' ] . ', ', $tables ) . $options[ 'orig_suffix' ];
         } else {
-            $messages[] = $action . ': ';
+            $messages[ ] = $action . ': ';
         }
         $status = MC_SUCCESS;
         foreach ( $tables as $table ) {
             # drop the backup table
-            if ( ddt_wpdb_query( "DROP TABLE $table" . MC_ORIG_SUFFIX, $messages ) === FALSE ) {
+            if ( ddt_wpdb_query( "DROP TABLE $table" . $options[ 'orig_suffix' ], $messages ) === FALSE ) {
                 $status = MC_FAILURE;
                 break;
             }
