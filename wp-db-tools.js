@@ -19,7 +19,7 @@ jQuery( function( ) {
     
     jQuery( "button.mc-wpdbdt-btn#mc_restore" ).click( function( e ) {
         jQuery( "#mc_status" ).html( "sending..." );
-        jQuery.post( ajaxurl, { 'action': 'mc_restore_tables' }, function ( response ) {
+        jQuery.post( ajaxurl, { action: "mc_restore_tables" }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
         } );
     } );
@@ -27,7 +27,7 @@ jQuery( function( ) {
     jQuery( "button.mc-wpdbdt-btn#mc_delete" ).click( function( e ) {
         var button = this;
         jQuery( "#mc_status" ).html( "sending..." );
-        jQuery.post( ajaxurl, { 'action': 'mc_delete_backup' }, function ( response ) {
+        jQuery.post( ajaxurl, { action: "mc_delete_backup" }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
@@ -35,6 +35,18 @@ jQuery( function( ) {
                 jQuery( "#mc_restore"      ).prop( "disabled", true  );
                 jQuery( "#mc_table_fields" ).prop( "disabled", false );
             }
+        } );
+    } );
+    
+    jQuery( "input#mc_backup_suffix" ).change( function( e ) {
+        var error_pane = jQuery( "div#mc_db_tools_error_pane" ).text( "checking backup suffix..." );
+        var suffix = this.value;
+        jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix }, function( response ) {
+            console.log( "response=", response );
+            var result = JSON.parse( response );
+            console.log( "result=", result );
+            error_pane.text( result.backup_suffix_ok ? suffix + " accepted as the backup suffix."
+                : result.bad_table + " already has suffix " + suffix + ", please try another suffix." );
         } );
     } );
     

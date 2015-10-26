@@ -45,7 +45,7 @@ define( 'MC_FAILURE', 'STATUS:FAILURE' );
 
 define( 'MC_COLS', 4 );
 
-$options = get_option( 'mc-x-wp-db-tools', [ 'orig_suffix' => '_orig' ] );
+$options = get_option( 'mc-x-wp-db-tools', [ 'version' => '1.0', 'orig_suffix' => '_orig' ] );
 
 # N.B. no existing table must have a name ending with suffix $options[ 'orig_suffix' ]'
 
@@ -56,11 +56,10 @@ if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) 
 
 # The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
 
-function ddt_get_backup_tables( $options, &$orig_tables = NULL ) {
+function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
     global $wpdb;
     # extract only table names with the backup suffix and remove the backup suffix
     $tables        = $wpdb->get_col( "show tables" );
-    $suffix        = $options[ 'orig_suffix' ];
     $suffix_len    = strlen( $suffix );
     if ( is_array( $orig_tables ) ) {
         $orig_tables = [ ];
@@ -70,6 +69,7 @@ function ddt_get_backup_tables( $options, &$orig_tables = NULL ) {
             return substr( $table, 0, -$suffix_len );
         } else {
             if ( is_array( $orig_tables ) ) {
+                # this is not a backup table so it is an original table
                 $orig_tables[ ] = $table;
             }
             return FALSE;
@@ -79,11 +79,14 @@ function ddt_get_backup_tables( $options, &$orig_tables = NULL ) {
     return $backup_tables;
 }
 
-function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
+# ddt_check_backup_suffix() verifies that no existing table already has the backup suffix
+
+function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL, $backup_suffix = NULL ) {
     if ( $backup_tables === NULL || $orig_tables === NULL ) {
         $orig_tables   = [ ];
-        $backup_tables = ddt_get_backup_tables( $options, $orig_tables );
+        $backup_tables = ddt_get_backup_tables( $backup_suffix, $orig_tables );
     }
+    $bad_table = NULL;
     foreach ( $backup_tables as $table ) {
         if ( !in_array( $table, $orig_tables ) ) {
             $bad_table = $table;
@@ -95,7 +98,7 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
     
 add_action( 'admin_menu', function( ) use ( $options ) {
     
-    add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
         global $wpdb;
 ?>
 <h2>Database Developer's Tools: Backup Tool</h2>
@@ -111,13 +114,13 @@ add_action( 'admin_menu', function( ) use ( $options ) {
         } ) );
         error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
         $orig_tables = [ ];
-        $backup_tables = ddt_get_backup_tables( $options, $orig_tables );
+        $backup_tables = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
         error_log( '##### add_menu_page():callback():$backup_tables=' . print_r( $backup_tables, true ) );
         error_log( '##### add_menu_page():callback():$orig_tables=' . print_r( $orig_tables, true ) );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
         if ( $backup_suffix_ok ) {
 ?>
-<div style="padding:10px 20px;">
+<div class="mc_container">
     <form id="mc_tables">
     <fieldset id="mc_table_fields" class="mc_db_tools_pane"<?php echo $backup_tables ? ' disabled' : ''; ?>>
         <legend>WordPress Tables for Backup</legend>
@@ -168,7 +171,7 @@ EOD;
 <?php
         } else {
 ?>
-    <div class="mc_db_tools_pane mc_db_toos_error_pane">
+    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane">
     The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
     <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
     </div>
@@ -192,7 +195,7 @@ EOD;
 <?php
         if ( $backup_suffix_ok ) {
 ?>
-    <div style="padding:20px;">
+    <div class="mc_main_buttons">
         <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
         <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
         <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>
@@ -206,7 +209,7 @@ EOD;
     </fieldset>
 </div>
 <?php
-    } );   # add_menu_page( 'Easy Backup for Testing', 'Easy Backup for Testing', 'export', MC_BACKUP_PAGE_NAME, function( ) {
+    } );   # add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
         
     add_action( 'admin_enqueue_scripts', function( $hook ) {
         error_log( '$hook=' . $hook );
@@ -295,7 +298,7 @@ if ( defined( 'DOING_AJAX' ) ) {
     add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $options, $wp_db_diff_included ) {
         $action      = 'restore tables';
         # get names of tables that have a backup copy
-        $tables      = ddt_get_backup_tables( $options );
+        $tables      = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
         $suffix      = $options[ 'orig_suffix' ];
         $messages    = [ ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
@@ -304,8 +307,8 @@ if ( defined( 'DOING_AJAX' ) ) {
         foreach ( $tables as $table ) {
             # drop the table to be restored
             if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
-                break;
+                #$status = MC_FAILURE;
+                #break;
             }
             # create a new empty table with the database schema of the corresponding backup table
             if ( ddt_wpdb_query( "CREATE TABLE $table LIKE {$table}{$suffix}", $messages ) === FALSE ) {
@@ -333,7 +336,7 @@ if ( defined( 'DOING_AJAX' ) ) {
     add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $options, $wp_db_diff_included ) {
         $action   = 'delete tables';
         $suffix   = $options[ 'orig_suffix' ];
-        $tables   = ddt_get_backup_tables( $options );
+        $tables   = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
         $messages = [ ];
         if ( $tables ) {
             $messages[ ] = $action . ': ' . implode(  $suffix . ', ', $tables ) . $suffix;
@@ -356,7 +359,19 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         die;
     } );   # add_action( 'wp_ajax_mc_delete_backup', function( ) {
-    
+        
+    add_action( 'wp_ajax_mc_check_backup_suffix', function( ) use ( $options ) {
+        $suffix = $_POST[ 'backup_suffix' ];
+        if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
+            $options[ 'orig_suffix' ] = $suffix;
+            update_option( 'mc-x-wp-db-tools', $options );
+        }
+        $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => $bad_table ] );
+        error_log( '$result=' . $result );
+        echo $result;
+        die;
+    } );   # add_action( 'wp_ajax_check_backup_suffix', function( ) {
+   
 }   #if ( defined( 'DOING_AJAX' ) ) {
 
 }   # namespace mc_x_wp_db_tools {

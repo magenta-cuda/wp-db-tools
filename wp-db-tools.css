@@ -1,11 +1,19 @@
+div.mc_container{
+    padding:10px 20px;
+}
+
 fieldset.mc_db_tools_pane,div.mc_db_tools_pane{
     border:2px solid black;margin:20px;padding:20px;
 }
 
-div.mc_db_tools_pane.mc_db_toos_error_pane{
+div.mc_db_tools_pane#mc_db_tools_error_pane{
     border:2px solid red;
 }
 
 fieldset#mc_table_fields table.mc_table_table td.mc_table_td{
     padding:5px 20px;
+}
+
+div.mc_main_buttons{
+    padding:20px;
 }
