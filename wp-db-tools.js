@@ -39,7 +39,8 @@ jQuery( function( ) {
     } );
     
     jQuery( "input#mc_backup_suffix" ).change( function( e ) {
-        var error_pane = jQuery( "div#mc_db_tools_error_pane" ).text( "checking backup suffix..." );
+        var error_pane = jQuery( "div#mc_db_tools_error_pane" );
+        error_pane.text( "checking backup suffix..." );
         var suffix = this.value;
         jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix }, function( response ) {
             console.log( "response=", response );
@@ -47,6 +48,11 @@ jQuery( function( ) {
             console.log( "result=", result );
             error_pane.text( result.backup_suffix_ok ? suffix + " accepted as the backup suffix."
                 : result.bad_table + " already has suffix " + suffix + ", please try another suffix." );
+            if ( result.backup_suffix_ok && error_pane.length || !result.backup_suffix_ok && !error_pane.length ) {
+                window.setTimeout( function( ) {
+                    location.reload( true );
+                }, 2000 );
+            }
         } );
     } );
     

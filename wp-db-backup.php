@@ -307,6 +307,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         foreach ( $tables as $table ) {
             # drop the table to be restored
             if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
+                # this is not a critical error so we can ignore it
                 #$status = MC_FAILURE;
                 #break;
             }
@@ -362,11 +363,10 @@ if ( defined( 'DOING_AJAX' ) ) {
         
     add_action( 'wp_ajax_mc_check_backup_suffix', function( ) use ( $options ) {
         $suffix = $_POST[ 'backup_suffix' ];
-        if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
-            $options[ 'orig_suffix' ] = $suffix;
-            update_option( 'mc-x-wp-db-tools', $options );
-        }
-        $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => $bad_table ] );
+        $options[ 'orig_suffix' ] = $suffix;
+        update_option( 'mc-x-wp-db-tools', $options );
+        $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix );
+        $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => $bad_table . $suffix ] );
         error_log( '$result=' . $result );
         echo $result;
         die;
