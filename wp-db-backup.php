@@ -118,66 +118,60 @@ add_action( 'admin_menu', function( ) use ( $options ) {
         error_log( '##### add_menu_page():callback():$backup_tables=' . print_r( $backup_tables, true ) );
         error_log( '##### add_menu_page():callback():$orig_tables=' . print_r( $orig_tables, true ) );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
-        if ( $backup_suffix_ok ) {
 ?>
 <div class="mc_container">
     <form id="mc_tables">
-    <fieldset id="mc_table_fields" class="mc_db_tools_pane"<?php echo $backup_tables ? ' disabled' : ''; ?>>
+    <fieldset id="mc_table_fields" class="mc_db_tools_pane"
+        <?php echo $backup_tables ? ' disabled' : ''; echo $backup_suffix_ok ? '' : ' style="display:none;"'; ?>>
         <legend>WordPress Tables for Backup</legend>
         <table class="mc_table_table">
 <?php
         # create a HTML input element embedded in a HTML td element for each database table
-            $mc_backup = MC_BACKUP;
-            $columns = MC_COLS;
-            $max_len = 0;
-            foreach ( $tables as $i => $table ) {
-                if ( ( $len = strlen( $table ) ) > $max_len ) {
-                    $max_len = $len;
-                }
+        $mc_backup = MC_BACKUP;
+        $columns = MC_COLS;
+        $max_len = 0;
+        foreach ( $tables as $i => $table ) {
+            if ( ( $len = strlen( $table ) ) > $max_len ) {
+                $max_len = $len;
             }
-            error_log( '$max_len=' . $max_len );
-            if ( $max_len > 80 ) {
-                $columns = 1;
-            } else if ( $max_len > 50 ) {
-                $columns = 2;
-            } else if ( $max_len > 40 ) {
-                $columns = 3;
+        }
+        error_log( '$max_len=' . $max_len );
+        if ( $max_len > 80 ) {
+            $columns = 1;
+        } else if ( $max_len > 50 ) {
+            $columns = 2;
+        } else if ( $max_len > 40 ) {
+            $columns = 3;
+        }
+        foreach ( $tables as $i => $table ) {
+            if ( $i % $columns === 0 ) {
+                echo '<tr>';
             }
-            foreach ( $tables as $i => $table ) {
-                if ( $i % $columns === 0 ) {
-                    echo '<tr>';
-                }
-                # create HTML input element with name = database table name and value = $mc_backup and text = database table name
-                # if table is already backed up set the checked attribute
-                $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
-                echo <<<EOD
+            # create HTML input element with name = database table name and value = $mc_backup and text = database table name
+            # if table is already backed up set the checked attribute
+            $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
+            echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="mc_table_checkbox" value="$mc_backup"$checked>
                 <label for="$table">$table</label>
             </td>
 EOD;
-                if ( $i % $columns === $columns - 1 ) {
-                    echo '</tr>';
-                }
-            }
-            if ( $i % $columns !== $columns - 1 ) {
+            if ( $i % $columns === $columns - 1 ) {
                 echo '</tr>';
             }
-            # this form invokes the AJAX action wp_ajax_mc_backup_tables
+        }
+        if ( $i % $columns !== $columns - 1 ) {
+            echo '</tr>';
+        }   # foreach ( $tables as $i => $table ) {
+        # this form invokes the AJAX action wp_ajax_mc_backup_tables
 ?>
         </table>
         <input type="hidden" name="action" value="mc_backup_tables">
     </fieldset>
-<?php
-        } else {
-?>
-    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane">
+    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
     The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
     <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
     </div>
-<?php
-        }
-?>
     <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
         <legend>Options</legend>
         <label for="mc_backup_suffix">Backup Suffix</label>

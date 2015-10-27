@@ -1,4 +1,9 @@
 jQuery( function( ) {
+    jQuery( "form#mc_tables" ).submit( function( ) {
+        // TODO: e.preventDefault() vs return false;
+        //e.preventDefault();
+        return false;
+    } );
     jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
         var button = this;
         jQuery( "#mc_status" ).html( "sending..." );
@@ -39,21 +44,28 @@ jQuery( function( ) {
     } );
     
     jQuery( "input#mc_backup_suffix" ).change( function( e ) {
+        var table_pane = jQuery( "fieldset#mc_table_fields" );
         var error_pane = jQuery( "div#mc_db_tools_error_pane" );
-        error_pane.text( "checking backup suffix..." );
+        error_pane.text( "checking backup suffix..." ).show( );
         var suffix = this.value;
         jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix }, function( response ) {
             console.log( "response=", response );
             var result = JSON.parse( response );
             console.log( "result=", result );
-            error_pane.text( result.backup_suffix_ok ? suffix + " accepted as the backup suffix."
-                : result.bad_table + " already has suffix " + suffix + ", please try another suffix." );
-            if ( result.backup_suffix_ok && error_pane.length || !result.backup_suffix_ok && !error_pane.length ) {
+            error_pane.text( result.backup_suffix_ok ? suffix + " accepted as the backup suffix. reloading..."
+                : "Existing table " + result.bad_table + " already has suffix " + suffix + ", please try another suffix." );
+            if ( result.backup_suffix_ok ) {
                 window.setTimeout( function( ) {
                     location.reload( true );
                 }, 2000 );
+            } else {
+                table_pane.hide( );
             }
         } );
+        e.stopImmediatePropagation( );
+        e.stopPropagation( );
+        e.preventDefault( );
+        return false;
     } );
     
 } );
