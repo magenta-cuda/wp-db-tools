@@ -1,5 +1,7 @@
 jQuery( function( ) {
-    jQuery( "form#mc_tables" ).submit( function( ) {
+    // submit form only on the click of backup button, i.e. ignore CR on form elements
+    jQuery( "form#mc_tables" ).submit( function( e ) {
+        console.log( "submit:", e );
         // TODO: e.preventDefault() vs return false;
         //e.preventDefault();
         return false;
@@ -44,6 +46,7 @@ jQuery( function( ) {
     } );
     
     jQuery( "input#mc_backup_suffix" ).change( function( e ) {
+        console.log( "change:", e );
         var table_pane = jQuery( "fieldset#mc_table_fields" );
         var error_pane = jQuery( "div#mc_db_tools_error_pane" );
         error_pane.text( "checking backup suffix..." ).show( );
@@ -52,20 +55,25 @@ jQuery( function( ) {
             console.log( "response=", response );
             var result = JSON.parse( response );
             console.log( "result=", result );
-            error_pane.text( result.backup_suffix_ok ? suffix + " accepted as the backup suffix. reloading..."
-                : "Existing table " + result.bad_table + " already has suffix " + suffix + ", please try another suffix." );
+            error_pane.text( result.backup_suffix_ok ? "\"" + suffix + "\" accepted as the backup suffix.  Reloading ..."
+                : "Existing table \"" + result.bad_table + "\" already has suffix \"" + suffix + "\", Please try another suffix." );
             if ( result.backup_suffix_ok ) {
                 window.setTimeout( function( ) {
                     location.reload( true );
-                }, 2000 );
+                }, 1000 );
             } else {
                 table_pane.hide( );
             }
         } );
-        e.stopImmediatePropagation( );
-        e.stopPropagation( );
-        e.preventDefault( );
         return false;
+    } ).keydown( function( e ) {
+        console.log( "keydown:", e );
+        // intercept CR since it triggers submit on form elements
+        if ( e.keyCode === 13 ) {
+            // force change event on CR
+            jQuery(this).change( );
+            return false;
+        }
     } );
     
 } );
