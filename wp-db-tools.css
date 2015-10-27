@@ -14,6 +14,6 @@ fieldset#mc_table_fields table.mc_table_table td.mc_table_td{
     padding:5px 20px;
 }
 
-div.mc_main_buttons{
+div#mc_main_buttons{
     padding:20px;
 }

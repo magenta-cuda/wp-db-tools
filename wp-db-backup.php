@@ -176,6 +176,7 @@ EOD;
         <legend>Options</legend>
         <label for="mc_backup_suffix">Backup Suffix</label>
         <input type="text" name="mc_backup_suffix" id="mc_backup_suffix" value="<?php echo $options[ 'orig_suffix' ]; ?>" size="20">
+        <button id="mc_suffix_verify" type="button">Verify</button>
 <?php
         if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
@@ -189,7 +190,7 @@ EOD;
 <?php
         if ( $backup_suffix_ok ) {
 ?>
-    <div class="mc_main_buttons">
+    <div id="mc_main_buttons">
         <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
         <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
         <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>

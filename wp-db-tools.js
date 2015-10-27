@@ -45,10 +45,13 @@ jQuery( function( ) {
         } );
     } );
     
+    // Verify backup suffix on change and CR keydown events
+    
     jQuery( "input#mc_backup_suffix" ).change( function( e ) {
         console.log( "change:", e );
-        var table_pane = jQuery( "fieldset#mc_table_fields" );
-        var error_pane = jQuery( "div#mc_db_tools_error_pane" );
+        var table_pane   = jQuery( "fieldset#mc_table_fields" );
+        var error_pane   = jQuery( "div#mc_db_tools_error_pane" );
+        var main_buttons = jQuery( "div#mc_main_buttons" );
         error_pane.text( "checking backup suffix..." ).show( );
         var suffix = this.value;
         jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix }, function( response ) {
@@ -58,11 +61,14 @@ jQuery( function( ) {
             error_pane.text( result.backup_suffix_ok ? "\"" + suffix + "\" accepted as the backup suffix.  Reloading ..."
                 : "Existing table \"" + result.bad_table + "\" already has suffix \"" + suffix + "\", Please try another suffix." );
             if ( result.backup_suffix_ok ) {
+                // need to reload since valid table names may have changed
                 window.setTimeout( function( ) {
                     location.reload( true );
                 }, 1000 );
             } else {
+                // invalid suffix so hide main backup panes
                 table_pane.hide( );
+                main_buttons.hide( );
             }
         } );
         return false;
@@ -74,6 +80,12 @@ jQuery( function( ) {
             jQuery(this).change( );
             return false;
         }
+    } );
+
+    // Also verify backup suffix on click of the Verify button
+    
+    jQuery( "button#mc_suffix_verify" ).click( function( e ) {
+        jQuery( "input#mc_backup_suffix" ).change( );
     } );
     
 } );
