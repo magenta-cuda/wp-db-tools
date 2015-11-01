@@ -237,7 +237,6 @@ if ( defined( 'DOING_AJAX' ) ) {
     
     add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included ) {
         $action = 'backup tables';
-        error_log( '##### mc_backup_tables():$_POST=' . print_r( $_POST, true ) );
         
         if ( !empty( $_POST[ 'mc_enable_diff' ] ) ) {
             $options[ 'diff' ] = 'enabled';
@@ -254,7 +253,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables      = array_keys( array_filter( $_POST, function( $value ) {
             return $value === MC_BACKUP;
         } ) );
-        error_log( '##### mc_backup_tables():$tables=' . print_r( $tables, true ) );
         $suffix      = $options[ 'orig_suffix' ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
         $status      = MC_SUCCESS;
