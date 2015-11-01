@@ -136,12 +136,14 @@ add_action( 'admin_menu', function( ) use ( $options ) {
             }
         }
         error_log( '$max_len=' . $max_len );
-        if ( $max_len > 80 ) {
+        if ( $max_len > 60 ) {
             $columns = 1;
-        } else if ( $max_len > 50 ) {
-            $columns = 2;
         } else if ( $max_len > 40 ) {
+            $columns = 2;
+        } else if ( $max_len > 30 ) {
             $columns = 3;
+        } else {
+            $columns = 4;
         }
         foreach ( $tables as $i => $table ) {
             if ( $i % $columns === 0 ) {
