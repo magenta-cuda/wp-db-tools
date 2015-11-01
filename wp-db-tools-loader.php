@@ -51,8 +51,7 @@ EOD;
     # load from inside a function to hide variables from the global scope
     
     require_once( __DIR__  . '/wp-db-backup.php' );
-    
-    error_log( '$options=' . print_r( $options, true ) );
+
 };
 
 }   # namespace mc_x_wp_db_tools {

@@ -59,8 +59,8 @@ if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) 
 function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
     global $wpdb;
     # extract only table names with the backup suffix and remove the backup suffix
-    $tables        = $wpdb->get_col( "show tables" );
-    $suffix_len    = strlen( $suffix );
+    $tables     = $wpdb->get_col( "show tables" );
+    $suffix_len = strlen( $suffix );
     if ( is_array( $orig_tables ) ) {
         $orig_tables = [ ];
     }
@@ -75,7 +75,6 @@ function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
             return FALSE;
         }
     }, $tables ) );
-    error_log( '##### ddt_get_backup_tables():return=' . print_r( $tables, true ) );
     return $backup_tables;
 }
 
@@ -104,19 +103,15 @@ add_action( 'admin_menu', function( ) use ( $options ) {
 <h2>Database Developer's Tools: Backup Tool</h2>
 <?php
         # get names of all tables in database
-        $tables = $wpdb->get_col( "show tables" );
-        error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
+        $tables     = $wpdb->get_col( "show tables" );
         # remove names of backup tables
         $suffix     = $options[ 'orig_suffix' ];
         $suffix_len = strlen( $suffix );
-        $tables = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
+        $tables     = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
             return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
         } ) );
-        error_log( '##### add_menu_page():callback():$tables=' . print_r( $tables, true ) );
-        $orig_tables = [ ];
-        $backup_tables = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
-        error_log( '##### add_menu_page():callback():$backup_tables=' . print_r( $backup_tables, true ) );
-        error_log( '##### add_menu_page():callback():$orig_tables=' . print_r( $orig_tables, true ) );
+        $orig_tables      = [ ];
+        $backup_tables    = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
 ?>
 <div class="mc_container">
@@ -129,13 +124,13 @@ add_action( 'admin_menu', function( ) use ( $options ) {
         # create a HTML input element embedded in a HTML td element for each database table
         $mc_backup = MC_BACKUP;
         $columns = MC_COLS;
+        # guess how many columns will fit into the page
         $max_len = 0;
         foreach ( $tables as $i => $table ) {
             if ( ( $len = strlen( $table ) ) > $max_len ) {
                 $max_len = $len;
             }
         }
-        error_log( '$max_len=' . $max_len );
         if ( $max_len > 60 ) {
             $columns = 1;
         } else if ( $max_len > 40 ) {
@@ -209,7 +204,6 @@ EOD;
     } );   # add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
         
     add_action( 'admin_enqueue_scripts', function( $hook ) {
-        error_log( '$hook=' . $hook );
         if ( strpos( $hook, MC_BACKUP_PAGE_NAME ) !== FALSE ) {
             wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
             wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
@@ -363,8 +357,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         $options[ 'orig_suffix' ] = $suffix;
         update_option( 'mc-x-wp-db-tools', $options );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix );
-        $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => $bad_table . $suffix ] );
-        error_log( '$result=' . $result );
+        $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => ( $bad_table ? $bad_table . $suffix : NULL ) ] );
         echo $result;
         die;
     } );   # add_action( 'wp_ajax_check_backup_suffix', function( ) {

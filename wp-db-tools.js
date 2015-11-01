@@ -6,6 +6,9 @@ jQuery( function( ) {
         //e.preventDefault();
         return false;
     } );
+
+    // Create backup
+    
     jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
         var button = this;
         jQuery( "#mc_status" ).html( "sending..." );
@@ -24,12 +27,16 @@ jQuery( function( ) {
         } );
     } );
     
+    // Restore from backup
+    
     jQuery( "button.mc-wpdbdt-btn#mc_restore" ).click( function( e ) {
         jQuery( "#mc_status" ).html( "sending..." );
         jQuery.post( ajaxurl, { action: "mc_restore_tables" }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
         } );
     } );
+    
+    // Delete backup
     
     jQuery( "button.mc-wpdbdt-btn#mc_delete" ).click( function( e ) {
         var button = this;
