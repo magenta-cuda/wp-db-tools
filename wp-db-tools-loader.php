@@ -1,7 +1,7 @@
 <?php
 
 /*
-Plugin Name: WordPress Database Developer Tools
+Plugin Name: Database Debugging Tools for Developers
 Plugin URI:  https://wpdbdt.wordpress.com/
 Description: Database tools for WordPress developers
 Version:     1.0

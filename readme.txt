@@ -1,4 +1,4 @@
-=== WordPress Database Debugging Tools ===
+=== Database Debugging Tools for Developers ===
 Contributors: Magenta Cuda
 Donate link:
 Tags: shortcode, tool, tester
