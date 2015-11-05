@@ -39,7 +39,7 @@ define( 'MC_DIFF_PAGE_NAME', 'ddt_diff_tool' );
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
     $wpdb->query( 'CREATE TABLE ' . MC_DIFF_CHANGES_TABLE .
-                  ' ( cid INT NOT NULL, table_name VARCHAR( 255 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
+                  ' ( cid INT NOT NULL, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
 };
 
 function ddt_wp_db_diff_end_session( ) {
@@ -107,10 +107,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
                 }
-                $id    = $id_for_table[ $table ];
-                $where = $matches[ 4 ];
+                $operation      = 'UPDATE';
+                $where          = $matches[ 4 ];
+                $id             = $id_for_table[ $table ];
                 $doing_my_query = TRUE;
-                $results = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
+                $results        = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
                 error_log( 'update:$results=' . print_r( $results, true ) );
             } else if ( preg_match( '/^\s*delete\s+(low_priority\s+|quick\s+)*from\s+(\w+)\s+where\s(.*)$/i', $last_query, $matches ) ) {
@@ -119,8 +120,9 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
                 }
-                $id    = $id_for_table[ $table ];
-                $where = $matches[ 3 ];
+                $operation      = 'DELETE';
+                $where          = $matches[ 3 ];
+                $id             = $id_for_table[ $table ];
                 $doing_my_query = TRUE;
                 $results = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
@@ -129,7 +131,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 error_log( 'ddt_post_query():unmatched: ' . $last_query );
             }
             if ( !empty( $table ) ) {
-                $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
+                $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
             }
         }
     };
@@ -146,12 +148,39 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     
     add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
         
-        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tools', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
+        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
         # export?
-        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',    'Diff Tools:', 'export', MC_DIFF_PAGE_NAME,   function( ) {
+        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) {
+            global $wpdb;
 ?>
-<h2>Database Developer's Tools: Diff Tool</h2>
+<h2>Database Diff Tool</h2>
 <?php
+            $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
+            $tables = [ ];
+            foreach ( $results as $result ) {
+                error_log( '$result=' . print_r( $result, true ) );
+                $table_name = $result->table_name;
+                $operation  = $result->operation;
+                $row_ids    = $result->row_ids;
+                if ( is_serialized( $row_ids ) ) {
+                    $row_ids = unserialize( $row_ids );
+                } else {
+                    $row_ids = [ $row_ids ];
+                }
+                if ( !array_key_exists( $table_name, $tables ) ) {
+                    $tables[ $table_name ] = [ ];
+                    $tables[ $table_name ][ 'INSERT' ] = 0;
+                    $tables[ $table_name ][ 'UPDATE' ] = 0;
+                    $tables[ $table_name ][ 'DELETE' ] = 0;
+                }
+                $tables[ $table_name ][ $operation ] += count( $row_ids );
+            }
+            error_log( '$tables=' . print_r( $tables, true ) );
+            echo '<table><tr><th>table</th><th>INSERT</th><th>UPDATE</th><th>DELETE</th></tr><tbody>'; 
+            foreach ( $tables as $table_name => $table ) {
+                echo "<tr><td>$table_name</td><td>$table[INSERT]</td><td>$table[UPDATE]</td><td>$table[DELETE]</td></tr>";
+            }
+            echo '</tbody></table>';
         } );
     } );
     

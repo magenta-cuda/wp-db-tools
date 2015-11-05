@@ -93,7 +93,7 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
 $ddt_add_main_menu = function ( ) use ( $options ) {
         global $wpdb;
 ?>
-<h2>Database Developer's Tools: Backup Tool</h2>
+<h2>Database Backup Tool</h2>
 <?php
         # get names of all tables in database
         $tables     = $wpdb->get_col( "show tables" );
