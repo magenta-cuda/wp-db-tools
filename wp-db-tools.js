@@ -116,4 +116,9 @@ jQuery( function( ) {
             jQuery( "div#mc_changes_view" ).html( r );
         } );
     } );
+    
+    jQuery( "input#ddt_x-table_width" ).change( function( e ) {
+        jQuery( "table.ddt_x-table_changes" ).css( "width", this.value );
+    } );
+    
 } );

@@ -25,7 +25,7 @@ table#mc_op_counts{
 
 table#mc_op_counts, table#mc_op_counts th, table#mc_op_counts td {
     border: 2px solid black;
-    background-color: #CCC
+    background-color: #CCC;
 }
 
 table#mc_op_counts th {
@@ -49,4 +49,29 @@ button.mc-wpdbdt-btn {
     padding: 3px 10px;
     margin: 20px;
 }
+
+div#mc_changes_view{
+    width: 100%;
+    overflow-x: auto;
+}
+
+table.ddt_x-table_changes {
+    border: 2px solid black;
+    border-collapse: collapse;
+    margin: 20px;
+    width: 100%;
+}
+
+table.mc_table_changes th, table.mc_table_changes td {
+    border: 2px solid black;
+    padding: 5px;
+    background-color: #CCC;
+}
+
+table.ddt_x-table_changes tr.ddt_x-changes-original td {
+    background-color: #FFECEC;
+}
+
+table.ddt_x-table_changes tr.ddt_x-changes-updated td {
+    background-color: #EAFFEA;
 }

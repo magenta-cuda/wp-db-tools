@@ -186,6 +186,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             }
             echo '</tbody></table>';
             echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button">View Selected</button>';
+            echo ' Table Width:<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px, 150%" value="100%">';
             echo '<div id="mc_changes_view"></div>';
         } );
     } );
@@ -249,18 +250,21 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
             }
             if ( $ids[ 'UPDATE' ] ) {
-                echo '<table>';
+                echo '<table class="ddt_x-table_changes mc_table_changes">';
+                foreach ( $columns as $column ) {
+                    echo '<th>' . $column . '</th>';
+                }
                 $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
                 $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
                 foreach ( $ids[ 'UPDATE' ] as $id ) {
-                    echo '<tr>';
+                    echo '<tr class="ddt_x-changes-original">';
                     foreach ( $columns as $column ) {
                         echo '<td>' . $originals[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
-                    echo '<tr>';
+                    echo '<tr class="ddt_x-changes-updated">';
                     foreach ( $columns as $column ) {
                         echo '<td>' . $updates[ $id ]->$column . '</td>';
                     }
