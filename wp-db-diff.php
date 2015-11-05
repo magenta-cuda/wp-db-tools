@@ -39,7 +39,7 @@ define( 'MC_DIFF_PAGE_NAME', 'ddt_diff_tool' );
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
     $wpdb->query( 'CREATE TABLE ' . MC_DIFF_CHANGES_TABLE .
-                  ' ( cid INT NOT NULL, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
+                  ' ( cid INT NOT NULL AUTO_INCREMENT, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
 };
 
 function ddt_wp_db_diff_end_session( ) {
@@ -169,21 +169,54 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 }
                 if ( !array_key_exists( $table_name, $tables ) ) {
                     $tables[ $table_name ] = [ ];
-                    $tables[ $table_name ][ 'INSERT' ] = 0;
-                    $tables[ $table_name ][ 'UPDATE' ] = 0;
-                    $tables[ $table_name ][ 'DELETE' ] = 0;
+                    $tables[ $table_name ][ 'INSERT' ] = [ ];
+                    $tables[ $table_name ][ 'UPDATE' ] = [ ];
+                    $tables[ $table_name ][ 'DELETE' ] = [ ];
                 }
-                $tables[ $table_name ][ $operation ] += count( $row_ids );
+                $ids =& $tables[ $table_name ][ $operation ];
+                $ids = array_merge( $ids, $row_ids );
             }
             error_log( '$tables=' . print_r( $tables, true ) );
-            echo '<table><tr><th>table</th><th>INSERT</th><th>UPDATE</th><th>DELETE</th></tr><tbody>'; 
+            echo '<table id="mc_op_counts"><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr><tbody>'; 
             foreach ( $tables as $table_name => $table ) {
-                echo "<tr><td>$table_name</td><td>$table[INSERT]</td><td>$table[UPDATE]</td><td>$table[DELETE]</td></tr>";
+                $inserts = count( array_unique( $table[ 'INSERT' ] ) );
+                $updates = count( array_unique( $table[ 'UPDATE' ] ) );
+                $deletes = count( array_unique( $table[ 'DELETE' ] ) );
+                echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
             }
             echo '</tbody></table>';
+            echo '<button class="mc-wpdbdt-btn" type="button">View Selected</button>';
         } );
     } );
     
+    add_action( 'admin_enqueue_scripts', function( $hook ) {
+        if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
+            wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
+            wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
+        }
+    } );
+    
+    if ( defined( 'DOING_AJAX' ) ) {
+
+        add_action( 'wp_ajax_mc_view_table_rows', function( ) {
+            $table     = $_POST[ 'table' ];
+            $operation = explode( ',', $_POST[ 'operation' ] );
+            $results   = $wpdb->get_col( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
+                . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
+                . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
+            foreach ( $results as $result ) {
+                if ( is_serialized( $row_ids ) ) {
+                    $row_ids = unserialize( $row_ids );
+                } else {
+                    $row_ids = [ $row_ids ];
+                }
+                foreach ( $row_ids as $row_id ) {
+                }
+            }
+       } );
+
+    }
+
 };   # function ddt_wp_db_diff_init( $options ) {
 
 ddt_wp_db_diff_init( $options, $ddt_add_main_menu );
