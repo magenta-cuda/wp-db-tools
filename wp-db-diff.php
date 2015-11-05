@@ -180,7 +180,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $ids = array_merge( $ids, $row_ids );
             }
             error_log( '$tables=' . print_r( $tables, true ) );
-            echo '<table id="mc_op_counts"><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr><tbody>'; 
+            echo '<table id="ddt_x-op_counts"><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr><tbody>'; 
             foreach ( $tables as $table_name => $table ) {
                 $inserts = count( array_unique( $table[ 'INSERT' ] ) );
                 $updates = count( array_unique( $table[ 'UPDATE' ] ) );
@@ -188,7 +188,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
             }
             echo '</tbody></table>';
-            echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button">View Selected</button>';
+            echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
             echo ' Table Width:<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px, 150%" value="100%">';
             echo '<div id="mc_changes_view"></div>';
         } );
@@ -213,6 +213,9 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             $operation = str_replace( 'Inserts', 'INSERT', $operation );
             $operation = str_replace( 'Updates', 'UPDATE', $operation );
             $operation = str_replace( 'Deletes', 'DELETE', $operation );
+            $operation = array_filter( $operation, function( $v ) {
+                return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE' ] );
+            } );
             $sql       = $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
                                              . ' WHERE table_name = %s AND operation IN ( '
                                              . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )

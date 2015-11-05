@@ -92,21 +92,37 @@ jQuery( function( ) {
     
     // Diff Tool
     
-    jQuery( "table#mc_op_counts input[type='checkbox']" ).change( function( e ) {
-        var tr = this.parentNode.parentNode;
-        jQuery( "table#mc_op_counts tr" ).each( function( ) {
-            if ( this !== tr ) {
-                jQuery( this ).find( "input[type='checked']" ).prop( "checked", false );
+    jQuery( "table#ddt_x-op_counts input[type='checkbox']" ).change( function( e ) {
+        var checked  = this.checked;
+        var tr       = this.parentNode.parentNode;
+        var is_first = this.parentNode === jQuery( tr ).find( "td" ).first( )[ 0 ];
+
+        if ( checked ) {
+            jQuery( "table#ddt_x-op_counts tr" ).each( function( ) {
+                if ( this !== tr ) {
+                    jQuery( this ).find( "input[type='checked']" ).prop( "checked", false );
+                }
+            } );
+            if ( is_first ) {
+                jQuery( tr ).find( "td input[type='checkbox']" ).prop( "checked", true );
             }
-        } );
+        } else {
+            if ( is_first ) {
+                jQuery( tr ).find( "td input[type='checkbox']" ).prop( "checked", false );
+            } else {
+                jQuery( tr ).find( "td" ).first( ).find( "input[type='checkbox']" ).prop( "checked", false );
+            }
+        }
+        jQuery( "button#mc_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
     } );
     
     jQuery( "button#mc_view_changes" ).click( function( e ) {
-        var checked   = jQuery( "table#mc_op_counts input[type='checkbox']:checked" );
+        var button    = this;
+        var checked   = jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" );
         var table     = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
-        var th        = jQuery( "table#mc_op_counts th" );
+        var th        = jQuery( "table#ddt_x-op_counts th" );
         var operation = "";
-        jQuery( "table#mc_op_counts input[type='checkbox']" ).each( function( i ) {
+        jQuery( "table#ddt_x-op_counts input[type='checkbox']" ).each( function( i ) {
             if ( this.checked ) {
                 operation += jQuery(th[i]).text( ) +" ";
             }
@@ -115,8 +131,10 @@ jQuery( function( ) {
             return;
         }
         operation = operation.trim( ).replace( /\s/g, "," );
+        this.disabled = true;
         jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
             jQuery( "div#mc_changes_view" ).html( r );
+            button.disabled = false;
         } );
     } );
     
