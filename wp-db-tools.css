@@ -75,3 +75,11 @@ table.ddt_x-table_changes tr.ddt_x-changes-original td {
 table.ddt_x-table_changes tr.ddt_x-changes-updated td {
     background-color: #EAFFEA;
 }
+
+table.ddt_x-table_changes tr.ddt_x-changes-original td.ddt_x-field_changed {
+    background-color: #F8CBCB;
+}
+
+table.ddt_x-table_changes tr.ddt_x-changes-updated td.ddt_x-field_changed {
+    background-color: #A6F3A6;
+}

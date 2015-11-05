@@ -237,6 +237,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             sort( $ids[ 'INSERT' ] );
             sort( $ids[ 'UPDATE' ] );
             sort( $ids[ 'DELETE' ] );
+            $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'INSERT' ] );
             error_log( '$ids=' . print_r( $ids, true ) );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
@@ -259,14 +260,20 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
                 foreach ( $ids[ 'UPDATE' ] as $id ) {
+                    if ( !array_key_exists( $id, $originals ) ) {
+                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
+                        continue;
+                    }
                     echo '<tr class="ddt_x-changes-original">';
                     foreach ( $columns as $column ) {
-                        echo '<td>' . $originals[ $id ]->$column . '</td>';
+                        $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
+                        echo '<td' . $td_class . '>' . $originals[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
                     echo '<tr class="ddt_x-changes-updated">';
                     foreach ( $columns as $column ) {
-                        echo '<td>' . $updates[ $id ]->$column . '</td>';
+                        $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
+                        echo '<td' . $td_class . '>' . $updates[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
                 }
