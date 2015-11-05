@@ -90,16 +90,17 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             
             error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
             
-            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s+)?.+#i', $last_query, $matches ) ) {
+            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s+)?(`)?(\w+)\4.+#i', $last_query, $matches ) ) {
                 error_log( 'insert:$matches=' . print_r( $matches, true ) );
-                $table = $matches[ 4 ];
+                $table     = $matches[ 5 ];
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
                 }
+                $operation = 'INSERT';
                 if ( $wpdb->use_mysqli ) {
-                    $result = mysqli_insert_id( $wpdb->dbh );
+                    $results = mysqli_insert_id( $wpdb->dbh );
                 } else {
-                    $result = mysql_insert_id( $wpdb->dbh );
+                    $results = mysql_insert_id( $wpdb->dbh );
                 }
             } else if ( preg_match( '#^\s*update\s+(low_priority\s+)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 error_log( 'update:$matches=' . print_r( $matches, true ) );
@@ -131,9 +132,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 error_log( 'ddt_post_query():unmatched: ' . $last_query );
             }
             if ( !empty( $table ) ) {
+                $doing_my_query = TRUE;
                 $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
+                $doing_my_query = FALSE;
             }
-        }
+        }   # if ( $last_query && preg_match( $regex_or_tables_orig, $last_query ) === 1 ) {
     };
 
     add_filter( 'query', function( $query ) use ( $tables_orig, $id_for_table ) {
@@ -247,8 +250,24 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             error_log( '$columns=' . print_r( $columns, true ) );
             $columns_imploded = implode( ', ', $columns );
             if ( $ids[ 'INSERT' ] ) {
+                echo '<table class="ddt_x-table_changes mc_table_changes">';
+                foreach ( $columns as $column ) {
+                    echo '<th>' . $column . '</th>';
+                }
                 $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
+                foreach ( $ids[ 'INSERT' ] as $id ) {
+                    if ( !array_key_exists( $id, $inserts) ) {
+                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad INSERT id \"$id\" for table \"$table\"." );
+                        continue;
+                    }
+                    echo '<tr class="ddt_x-changes-updated">';
+                    foreach ( $columns as $column ) {
+                        echo '<td class="ddt_x-field_changed">' . $inserts[ $id ]->$column . '</td>';
+                    }
+                    echo '</tr>';
+                }
+                echo '</table>';
             }
             if ( $ids[ 'UPDATE' ] ) {
                 echo '<table class="ddt_x-table_changes mc_table_changes">';
@@ -279,7 +298,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 }
                 echo '</table>';
             }
-            if ( $ids[ 'INSERT' ] ) {
+            if ( $ids[ 'DELETE' ] ) {
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
