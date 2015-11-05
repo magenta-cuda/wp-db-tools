@@ -186,6 +186,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             }
             echo '</tbody></table>';
             echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button">View Selected</button>';
+            echo '<div id="mc_changes_view"></div>';
         } );
     } );
     
@@ -236,20 +237,42 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             sort( $ids[ 'UPDATE' ] );
             sort( $ids[ 'DELETE' ] );
             error_log( '$ids=' . print_r( $ids, true ) );
+            $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
+            $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
+                return $v !== $table_id;
+            } );
+            array_unshift( $columns, $table_id );
+            error_log( '$columns=' . print_r( $columns, true ) );
+            $columns_imploded = implode( ', ', $columns );
             if ( $ids[ 'INSERT' ] ) {
-                $inserts   = $wpdb->get_results( 'SELECT * FROM ' . $table           
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )' );
+                $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
             }
             if ( $ids[ 'UPDATE' ] ) {
-                $updates   = $wpdb->get_results( 'SELECT * FROM ' . $table           
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )' );
-                $originals = $wpdb->get_results( 'SELECT * FROM ' . $table . $suffix
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )' );
+                echo '<table>';
+                $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+                $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+                foreach ( $ids[ 'UPDATE' ] as $id ) {
+                    echo '<tr>';
+                    foreach ( $columns as $column ) {
+                        echo '<td>' . $originals[ $id ]->$column . '</td>';
+                    }
+                    echo '</tr>';
+                    echo '<tr>';
+                    foreach ( $columns as $column ) {
+                        echo '<td>' . $updates[ $id ]->$column . '</td>';
+                    }
+                    echo '</tr>';
+                }
+                echo '</table>';
             }
             if ( $ids[ 'INSERT' ] ) {
-                $deletes   = $wpdb->get_results( 'SELECT * FROM ' . $table . $suffix
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )' );
+                $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
+            die;
        } );
 
     }   # if ( defined( 'DOING_AJAX' ) ) {

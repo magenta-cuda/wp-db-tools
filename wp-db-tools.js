@@ -113,6 +113,7 @@ jQuery( function( ) {
         } );
         operation = operation.trim( ).replace( /\s/g, "," );
         jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
+            jQuery( "div#mc_changes_view" ).html( r );
         } );
     } );
 } );
