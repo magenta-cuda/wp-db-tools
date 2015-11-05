@@ -34,6 +34,7 @@ Project X: WordPress Database Developer Tools: Diff
 namespace mc_x_wp_db_tools {
 
 define( 'MC_DIFF_CHANGES_TABLE', 'mc_diff_modified' );
+define( 'MC_DIFF_PAGE_NAME', 'ddt_diff_tool' );
 
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
@@ -46,7 +47,7 @@ function ddt_wp_db_diff_end_session( ) {
     $wpdb->query( 'DROP TABLE ' . MC_DIFF_CHANGES_TABLE );
 };
 
-function ddt_wp_db_diff_init( $options ) {
+function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     global $wpdb;
     
     $tables_orig = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
@@ -142,9 +143,21 @@ function ddt_wp_db_diff_init( $options ) {
         error_log( 'shutdown:' );
         ddt_post_query( $tables_orig, $id_for_table );
     }, $tables_orig, $id_for_table );
+    
+    add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
+        
+        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tools', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
+        # export?
+        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',    'Diff Tools:', 'export', MC_DIFF_PAGE_NAME,   function( ) {
+?>
+<h2>Database Developer's Tools: Diff Tool</h2>
+<?php
+        } );
+    } );
+    
 };   # function ddt_wp_db_diff_init( $options ) {
 
-ddt_wp_db_diff_init( $options );
+ddt_wp_db_diff_init( $options, $ddt_add_main_menu );
 
 }   # namespace mc_x_wp_db_tools {
 

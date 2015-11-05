@@ -49,11 +49,6 @@ $options = get_option( 'mc-x-wp-db-tools', [ 'version' => '1.0', 'orig_suffix' =
 
 # N.B. no existing table must have a name ending with suffix $options[ 'orig_suffix' ]'
 
-$wp_db_diff_included = NULL;
-if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) ) {
-    $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
-}
-
 # The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
 
 function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
@@ -95,9 +90,7 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
     return TRUE;
 }
     
-add_action( 'admin_menu', function( ) use ( $options ) {
-    
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
+$ddt_add_main_menu = function ( ) use ( $options ) {
         global $wpdb;
 ?>
 <h2>Database Developer's Tools: Backup Tool</h2>
@@ -201,16 +194,23 @@ EOD;
     </fieldset>
 </div>
 <?php
-    } );   # add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, function( ) use ( $options ) {
+};   # $ddt_add_main_menu = function ( ) use ( $options ) {
         
-    add_action( 'admin_enqueue_scripts', function( $hook ) {
-        if ( strpos( $hook, MC_BACKUP_PAGE_NAME ) !== FALSE ) {
-            wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
-            wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
-        }
-    } );
+add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
+} );   # add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
+
+add_action( 'admin_enqueue_scripts', function( $hook ) {
+    if ( strpos( $hook, MC_BACKUP_PAGE_NAME ) !== FALSE ) {
+        wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
+        wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
+    }
+} );
     
-} );   # add_action( 'admin_menu', function() {
+$wp_db_diff_included = NULL;
+if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'diff' ] ) ) {
+    $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
+}
 
 if ( defined( 'DOING_AJAX' ) ) {
     
