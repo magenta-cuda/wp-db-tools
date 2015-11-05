@@ -90,4 +90,29 @@ jQuery( function( ) {
         jQuery( "input#mc_backup_suffix" ).change( );
     } );
     
+    // Diff Tool
+    
+    jQuery( "table#mc_op_counts input[type='checkbox']" ).change( function( e ) {
+        var tr = this.parentNode.parentNode;
+        jQuery( "table#mc_op_counts tr" ).each( function( ) {
+            if ( this !== tr ) {
+                jQuery( this ).find( "input[type='checked']" ).prop( "checked", false );
+            }
+        } );
+    } );
+    
+    jQuery( "button#mc_view_changes" ).click( function( e ) {
+        var checked   = jQuery( "table#mc_op_counts input[type='checkbox']:checked" );
+        var table     = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+        var th        = jQuery( "table#mc_op_counts th" );
+        var operation = "";
+        jQuery( "table#mc_op_counts input[type='checkbox']" ).each( function( i ) {
+            if ( this.checked ) {
+                operation += jQuery(th[i]).text( ) +" ";
+            }
+        } );
+        operation = operation.trim( ).replace( /\s/g, "," );
+        jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
+        } );
+    } );
 } );

@@ -185,7 +185,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
             }
             echo '</tbody></table>';
-            echo '<button class="mc-wpdbdt-btn" type="button">View Selected</button>';
+            echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button">View Selected</button>';
         } );
     } );
     
@@ -198,24 +198,61 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     
     if ( defined( 'DOING_AJAX' ) ) {
 
-        add_action( 'wp_ajax_mc_view_table_rows', function( ) {
+        add_action( 'wp_ajax_mc_view_changes', function( ) use ( $options, $id_for_table ) {
+            global $wpdb;
+            error_log( '$_POST=' . print_r( $_POST, true ) );
+            $suffix    = $options[ 'orig_suffix' ];
             $table     = $_POST[ 'table' ];
+            $table_id  = $id_for_table[ $table ];
             $operation = explode( ',', $_POST[ 'operation' ] );
-            $results   = $wpdb->get_col( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
-                . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
-                . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
+            $operation = str_replace( 'Inserts', 'INSERT', $operation );
+            $operation = str_replace( 'Updates', 'UPDATE', $operation );
+            $operation = str_replace( 'Deletes', 'DELETE', $operation );
+            $sql       = $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
+                                             . ' WHERE table_name = %s AND operation IN ( '
+                                             . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
+                                             . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) );
+            error_log( '$sql=' . $sql );
+            $results   = $wpdb->get_results( $sql );    
+            error_log( '$results=' . print_r( $results, true ) );
+            $ids             = [ ];
+            $ids[ 'INSERT' ] = [ ];
+            $ids[ 'UPDATE' ] = [ ];
+            $ids[ 'DELETE' ] = [ ];
             foreach ( $results as $result ) {
+                $row_ids = $result->row_ids;
                 if ( is_serialized( $row_ids ) ) {
                     $row_ids = unserialize( $row_ids );
                 } else {
                     $row_ids = [ $row_ids ];
                 }
-                foreach ( $row_ids as $row_id ) {
-                }
+                $idsr =& $ids[ $result->operation ];
+                $idsr = array_merge( $idsr, $row_ids );
+            }
+            $ids[ 'INSERT' ] = array_unique( $ids[ 'INSERT' ] );
+            $ids[ 'UPDATE' ] = array_unique( $ids[ 'UPDATE' ] );
+            $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
+            sort( $ids[ 'INSERT' ] );
+            sort( $ids[ 'UPDATE' ] );
+            sort( $ids[ 'DELETE' ] );
+            error_log( '$ids=' . print_r( $ids, true ) );
+            if ( $ids[ 'INSERT' ] ) {
+                $inserts   = $wpdb->get_results( 'SELECT * FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )' );
+            }
+            if ( $ids[ 'UPDATE' ] ) {
+                $updates   = $wpdb->get_results( 'SELECT * FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )' );
+                $originals = $wpdb->get_results( 'SELECT * FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )' );
+            }
+            if ( $ids[ 'INSERT' ] ) {
+                $deletes   = $wpdb->get_results( 'SELECT * FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )' );
             }
        } );
 
-    }
+    }   # if ( defined( 'DOING_AJAX' ) ) {
 
 };   # function ddt_wp_db_diff_init( $options ) {
 
