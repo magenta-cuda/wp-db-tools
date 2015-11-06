@@ -68,7 +68,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     }
     error_log( '$id_for_table=' . print_r( $id_for_table, true ) );
     
-    function ddt_post_query( $tables_orig, $id_for_table ) {
+    $ddt_post_query = function ( $tables_orig, $id_for_table ) use ( $options ) {
         global $wpdb;
         
         static $regex_or_tables_orig = NULL;
@@ -82,7 +82,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         if ( $doing_my_query ) {
             return;
         }
-        
+        $suffix     = $options[ 'orig_suffix' ];
         $last_query = $wpdb->last_query;
         #error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
        
@@ -102,7 +102,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 } else {
                     $results = mysql_insert_id( $wpdb->dbh );
                 }
-            } else if ( preg_match( '#^\s*update\s+(low_priority\s+)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*update\s+(low_priority\s+)?(`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 error_log( 'update:$matches=' . print_r( $matches, true ) );
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
@@ -115,17 +115,17 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $results        = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
                 error_log( 'update:$results=' . print_r( $results, true ) );
-            } else if ( preg_match( '/^\s*delete\s+(low_priority\s+|quick\s+)*from\s+(\w+)\s+where\s(.*)$/i', $last_query, $matches ) ) {
+            } else if ( preg_match( '/^\s*delete\s+(low_priority\s+|quick\s+)*from\s+(`)?(\w+)\2\s+where\s(.*)$/i', $last_query, $matches ) ) {
                 error_log( '$delete:matches=' . print_r( $matches, true ) );
-                $table = $matches[ 2 ];
+                $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
                 }
                 $operation      = 'DELETE';
-                $where          = $matches[ 3 ];
+                $where          = $matches[ 4 ];
                 $id             = $id_for_table[ $table ];
                 $doing_my_query = TRUE;
-                $results = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
+                $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
             } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
             } else {
@@ -139,15 +139,15 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         }   # if ( $last_query && preg_match( $regex_or_tables_orig, $last_query ) === 1 ) {
     };
 
-    add_filter( 'query', function( $query ) use ( $tables_orig, $id_for_table ) {
-        ddt_post_query( $tables_orig, $id_for_table );
+    add_filter( 'query', function( $query ) use ( $ddt_post_query, $tables_orig, $id_for_table ) {
+        $ddt_post_query( $tables_orig, $id_for_table );
         return $query;
     } );
 
-    register_shutdown_function( function( $tables_orig, $id_for_table ) {
+    register_shutdown_function( function( $ddt_post_query, $tables_orig, $id_for_table ) {
         error_log( 'shutdown:' );
-        ddt_post_query( $tables_orig, $id_for_table );
-    }, $tables_orig, $id_for_table );
+        $ddt_post_query( $tables_orig, $id_for_table );
+    }, $ddt_post_query, $tables_orig, $id_for_table );
     
     add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
         
@@ -210,9 +210,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             $table     = $_POST[ 'table' ];
             $table_id  = $id_for_table[ $table ];
             $operation = explode( ',', $_POST[ 'operation' ] );
+            # replace pretty header labels for operation with the operation tag
             $operation = str_replace( 'Inserts', 'INSERT', $operation );
             $operation = str_replace( 'Updates', 'UPDATE', $operation );
             $operation = str_replace( 'Deletes', 'DELETE', $operation );
+            # remove any invalid operation tags
             $operation = array_filter( $operation, function( $v ) {
                 return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE' ] );
             } );
@@ -302,8 +304,24 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 echo '</table>';
             }
             if ( $ids[ 'DELETE' ] ) {
+                echo '<table class="ddt_x-table_changes mc_table_changes">';
+                foreach ( $columns as $column ) {
+                    echo '<th>' . $column . '</th>';
+                }
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
+                foreach ( $ids[ 'DELETE' ] as $id ) {
+                    if ( !array_key_exists( $id, $deletes ) ) {
+                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad DELETE id \"$id\" for table \"$table\"." );
+                        continue;
+                    }
+                    echo '<tr class="ddt_x-changes-original">';
+                    foreach ( $columns as $column ) {
+                        echo '<td class="ddt_x-field_changed">' . $deletes[ $id ]->$column . '</td>';
+                    }
+                    echo '</tr>';
+                }
+                echo '</table>';
             }
             die;
        } );
