@@ -154,10 +154,42 @@ jQuery( function( ) {
             width = jQuery.isNumeric( width ) ? width + "px" : width;
             table.css( "width", width );
             table.find( "tbody td" ).click( function( e ) {
-                jQuery( "div#ddt_x-popup-margin" ).show( );
-                jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
+                var clickedTr = jQuery( this.parentNode );
+                var index     = clickedTr.find( "td" ).index( this );
+                var updated   = clickedTr.hasClass( "ddt_x-changes_updated" );
+                var original  = clickedTr.hasClass( "ddt_x-changes_original" );
+                if ( updated ) {
+                    var prevTr = clickedTr.prev( "tr" );
+                    if ( prevTr && prevTr.hasClass( "ddt_x-changes_original" ) ) {
+                        var that = prevTr.find( "td" )[ index ];
+                    }
+                } else if ( original ) {
+                    var nextTr = clickedTr.next( "tr" );
+                    if ( nextTr && nextTr.hasClass( "ddt_x-changes_updated" ) ) {
+                        var that = nextTr.find( "td" )[ index ];
+                    }
+                }
+                var main = jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
                     .css( "background-color", jQuery( this ).css( "background-color" ) );
+                var other = jQuery( "div#ddt_x-detail_content_other" );
+                if ( that ) {
+                    other.text( that.dataset.origContent ? that.dataset.origContent : that.textContent )
+                        .css( "background-color", jQuery( that ).css( "background-color" ) );
+                    main.css( "width", "47%" );
+                    if ( updated ) {
+                        main.css(  { float: "right", margin: "auto 2% auto 1%" } );
+                        other.css( { float: "left",  margin: "auto 1% auto 2%" } );
+                    } else {
+                        main.css(  { float: "left",  margin: "auto 1% auto 2%" } );
+                        other.css( { float: "right", margin: "auto 2% auto 1%" } );
+                    }
+                    other.show( );
+                } else {
+                    main.css( { width: "96%", float: "none", margin: "auto" } );
+                    other.hide( );
+                }
                 jQuery( "div#ddt_x-detail_popup" ).show( );
+                jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
             button.disabled = false;
         } );

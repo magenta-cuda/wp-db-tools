@@ -218,7 +218,10 @@ No database operations have been done on the selected tables.
 </div>
 <div id="ddt_x-detail_popup">
     <button id="ddt_x-close_detail_popup">X</button>
-    <div id="ddt_x-detail_content" class="ddt_x-detail_content"></div>
+    <div style="clear:both;">
+        <div id="ddt_x-detail_content" class="ddt_x-detail_content"></div>
+        <div id="ddt_x-detail_content_other" class="ddt_x-detail_content_other ddt_x-detail_content"></div>
+    </div>
 </div>
 <?php
         } );
@@ -307,7 +310,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad INSERT id \"$id\" for table \"$table\"." );
                         continue;
                     }
-                    echo '<tr class="ddt_x-changes-updated">';
+                    echo '<tr class="ddt_x-changes_updated">';
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . $inserts[ $id ]->$column . '</td>';
                     }
@@ -329,13 +332,13 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
                         continue;
                     }
-                    echo '<tr class="ddt_x-changes-original">';
+                    echo '<tr class="ddt_x-changes_original">';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . $originals[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
-                    echo '<tr class="ddt_x-changes-updated">';
+                    echo '<tr class="ddt_x-changes_updated">';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . $updates[ $id ]->$column . '</td>';
@@ -356,7 +359,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad DELETE id \"$id\" for table \"$table\"." );
                         continue;
                     }
-                    echo '<tr class="ddt_x-changes-original">';
+                    echo '<tr class="ddt_x-changes_original">';
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . $deletes[ $id ]->$column . '</td>';
                     }
