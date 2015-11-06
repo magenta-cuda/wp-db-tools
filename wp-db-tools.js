@@ -1,4 +1,20 @@
 jQuery( function( ) {
+    
+    var cellContentMaxLength = 100;
+    
+    function reduceTableCellContents( table ) {
+        if ( ! ( table instanceof jQuery ) ) {
+            table = jQuery( table );
+        }
+        table.find( "td" ).each( function( ) {
+            var text = this.textContent;
+            if ( text.length > cellContentMaxLength ) {
+                this.dataset.origContent = text;
+                this.textContent = text.substr( 0, cellContentMaxLength ) + " ...";
+            }
+        } );
+    }
+    
     // submit form only on the click of backup button, i.e. ignore CR on form elements
     jQuery( "form#mc_tables" ).submit( function( e ) {
         console.log( "submit:", e );
@@ -133,7 +149,7 @@ jQuery( function( ) {
         operation = operation.trim( ).replace( /\s/g, "," );
         this.disabled = true;
         jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
-            jQuery( "div#mc_changes_view" ).html( r );
+            reduceTableCellContents( jQuery( "div#mc_changes_view" ).html( r ).find( "table" ) );
             button.disabled = false;
         } );
     } );
