@@ -148,7 +148,13 @@ jQuery( function( ) {
         operation = operation.trim( ).replace( /\s/g, "," );
         this.disabled = true;
         jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
-            reduceTableCellContents( jQuery( "div#mc_changes_view" ).html( r ).find( "table" ) );
+            var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table" );
+            reduceTableCellContents( table );
+            table.find( "tbody td" ).click( function( e ) {
+                jQuery( "div#ddt_x-popup-margin" ).show( );
+                jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent );
+                jQuery( "div#ddt_x-detail_popup" ).show( );
+            } );
             button.disabled = false;
         } );
     } );
@@ -161,4 +167,9 @@ jQuery( function( ) {
         reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table" ) );
     } );
     
+    jQuery( "div#ddt_x-detail_popup button#ddt_x-close_detail_popup" ).click( function( e ) {
+        jQuery( "div#ddt_x-popup-margin" ).hide( );
+        jQuery( "div#ddt_x-detail_popup" ).hide( );
+    } );
+
 } );

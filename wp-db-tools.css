@@ -83,3 +83,42 @@ table.ddt_x-table_changes tr.ddt_x-changes-original td.ddt_x-field_changed {
 table.ddt_x-table_changes tr.ddt_x-changes-updated td.ddt_x-field_changed {
     background-color: #A6F3A6;
 }
+
+div#ddt_x-popup-margin {
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    z-index: 100000;
+    border: 2px solid black;
+    border-radius: 7px;
+    background-color:black;
+    opacity:0.9;
+    width: 100%;
+    height: 100%;
+    display: none;
+}
+
+div#ddt_x-detail_popup {
+    position: fixed;
+    left: 3%;
+    top: 5%;
+    z-index: 100001;
+    border: 2px solid black;
+    border-radius: 7px;
+    background-color: white;
+    width: 94%;
+    height: 90%;
+    overflow: auto;
+    display: none;
+}
+
+div#ddt_x-detail_popup button#ddt_x-close_detail_popup {
+    float: right;
+    border: 1px solid gray;
+    border-radius: 4px;
+    margin: 10px;
+}
+
+div.ddt_x-detail_content {
+    padding:10px;
+}

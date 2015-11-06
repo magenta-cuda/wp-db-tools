@@ -203,6 +203,14 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters:</label>';
             echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate cell contents to this number of characters" value="100">';
             echo '<div id="mc_changes_view"></div>';
+?>
+<div id="ddt_x-popup-margin">
+</div>
+<div id="ddt_x-detail_popup">
+    <button id="ddt_x-close_detail_popup">X</button>
+    <div id="ddt_x-detail_content" class="ddt_x-detail_content"></div>
+</div>
+<?php
         } );
     } );
     
