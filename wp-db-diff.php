@@ -50,7 +50,7 @@ function ddt_wp_db_diff_end_session( ) {
 function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     global $wpdb;
     
-    $tables_orig = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
+    $tables_orig = ddt_get_backup_tables( $options[ 'ddt_x-orig_suffix' ] );
     
     $id_for_table = [ ];
     
@@ -82,7 +82,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         if ( $doing_my_query ) {
             return;
         }
-        $suffix     = $options[ 'orig_suffix' ];
+        $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
         #error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
        
@@ -236,7 +236,7 @@ No database operations have been done on the selected tables.
         add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
             global $wpdb;
             error_log( '$_POST=' . print_r( $_POST, true ) );
-            $suffix    = $options[ 'orig_suffix' ];
+            $suffix    = $options[ 'ddt_x-orig_suffix' ];
             $table     = $_POST[ 'table' ];
             $table_id  = $id_for_table[ $table ];
             $operation = explode( ',', $_POST[ 'operation' ] );

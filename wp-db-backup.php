@@ -46,14 +46,15 @@ define( 'MC_FAILURE', 'STATUS:FAILURE' );
 define( 'MC_COLS', 4 );
 
 $options = get_option( 'ddt-x-wp_db_tools', [
-    'version'               => '2.0',
-    'orig_suffix'           => '_orig',
+    'ddt_x-version'         => '2.0',
+    'orig_suffix'           => '_orig',   # TODO: replace with ddt_x-orig_suffix for consistency
+    'ddt_x-orig_suffix'     => '_orig',
     'ddt_x-enable_diff'     => 'enabled',
     'ddt_x-table_width'     => '2000px',
     'ddt_x-table_cell_size' => '200'
 ] );
 
-# N.B. no existing table must have a name ending with suffix $options[ 'orig_suffix' ]'
+# N.B. no existing table must have a name ending with suffix $options[ 'ddt_x-orig_suffix' ]'
 
 # The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
 
@@ -145,7 +146,7 @@ $ddt_add_main_menu = function ( ) use ( $options ) {
             }
             # create HTML input element with name = database table name and value = $mc_backup and text = database table name
             # if table is already backed up set the checked attribute
-            $checked = in_array( $table, $backup_tables ) ? 'checked' : '';
+            $checked = in_array( $table, $backup_tables ) ? ' checked' : '';
             echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="mc_table_checkbox" value="$mc_backup"$checked>
@@ -170,14 +171,15 @@ EOD;
     </div>
     <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
         <legend>Options</legend>
-        <label for="mc_backup_suffix">Backup Suffix</label>
+        <label for="mc_backup_suffix">Backup Suffix: </label>
         <input type="text" name="mc_backup_suffix" id="mc_backup_suffix" value="<?php echo $options[ 'orig_suffix' ]; ?>" size="20">
         <button id="mc_suffix_verify" type="button">Verify</button>
 <?php
         if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
-        <label for="ddt_x-enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff</label>
-        <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled">
+        <label for="ddt_x-enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff: </label>
+        <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled"
+            <?php if ( !empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' checked'; } ?>>
 <?php
         }
 ?>
@@ -360,7 +362,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         
     add_action( 'wp_ajax_mc_check_backup_suffix', function( ) use ( $options ) {
         $suffix = $_POST[ 'backup_suffix' ];
-        $options[ 'orig_suffix' ] = $suffix;
+        $options[ 'ddt_x-orig_suffix' ] = $options[ 'orig_suffix' ] = $suffix;
         update_option( 'ddt-x-wp_db_tools', $options );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix );
         $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => ( $bad_table ? $bad_table . $suffix : NULL ) ] );
