@@ -149,11 +149,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         $ddt_post_query( $tables_orig, $id_for_table );
     }, $ddt_post_query, $tables_orig, $id_for_table );
     
-    add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
+    add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options ) {
         
         add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
         # export?
-        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) {
+        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options ) {
             global $wpdb;
 ?>
 <h2>Database Diff Tool</h2>
@@ -198,11 +198,11 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             }
             echo '</tbody></table>';
             echo '<div id="ddt_x-diff_controls">';
-            echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
+            echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
             echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width:</label>';
-            echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="100%">';
+            echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
             echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters:</label>';
-            echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate cell contents to this number of characters" value="100">';
+            echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
             echo '</div>';
             echo '<div id="mc_changes_view"></div>';
 ?>
@@ -225,7 +225,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
     
     if ( defined( 'DOING_AJAX' ) ) {
 
-        add_action( 'wp_ajax_mc_view_changes', function( ) use ( $options, $id_for_table ) {
+        add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
             global $wpdb;
             error_log( '$_POST=' . print_r( $_POST, true ) );
             $suffix    = $options[ 'orig_suffix' ];
@@ -291,7 +291,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
                 foreach ( $ids[ 'INSERT' ] as $id ) {
                     if ( !array_key_exists( $id, $inserts) ) {
-                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad INSERT id \"$id\" for table \"$table\"." );
+                        error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad INSERT id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes-updated">';
@@ -313,7 +313,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
                 foreach ( $ids[ 'UPDATE' ] as $id ) {
                     if ( !array_key_exists( $id, $originals ) ) {
-                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
+                        error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes-original">';
@@ -340,7 +340,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
                 foreach ( $ids[ 'DELETE' ] as $id ) {
                     if ( !array_key_exists( $id, $deletes ) ) {
-                        error_log( "ERROR:action:wp_ajax_mc_view_changes:bad DELETE id \"$id\" for table \"$table\"." );
+                        error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad DELETE id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes-original">';
@@ -352,8 +352,17 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                 echo '</table>';
             }
             die;
-       } );
-
+        } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
+           
+        add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
+            foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size' ] as $option ) {
+                if ( !empty( $_POST[ $option ] ) ) {
+                    $options[ $option ] = $_POST[ $option ];
+                }
+            }
+            update_option( 'ddt-x-wp_db_tools', $options ); 
+        } );   # add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
+        
     }   # if ( defined( 'DOING_AJAX' ) ) {
 
 };   # function ddt_wp_db_diff_init( $options ) {

@@ -128,10 +128,10 @@ jQuery( function( ) {
                 jQuery( tr ).find( "> td" ).first( ).find( "input[type='checkbox']" ).prop( "checked", false );
             }
         }
-        jQuery( "button#mc_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
+        jQuery( "button#ddt_x-diff_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
     } );
     
-    jQuery( "button#mc_view_changes" ).click( function( e ) {
+    jQuery( "button#ddt_x-diff_view_changes" ).click( function( e ) {
         var button    = this;
         var checked   = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
         var table     = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
@@ -147,7 +147,7 @@ jQuery( function( ) {
         }
         operation = operation.trim( ).replace( /\s/g, "," );
         this.disabled = true;
-        jQuery.post( ajaxurl, { action: "mc_view_changes", table: table, operation: operation }, function( r ) {
+        jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation }, function( r ) {
             var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table" );
             reduceTableCellContents( table );
             table.find( "tbody td" ).click( function( e ) {
@@ -161,10 +161,12 @@ jQuery( function( ) {
     } );
     
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value }, function( r ) { } );
         jQuery( "table.ddt_x-table_changes" ).css( "width", this.value );
     } );
     
     jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value }, function( r ) { } );
         reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table" ) );
     } );
     
