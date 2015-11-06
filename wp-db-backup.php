@@ -181,11 +181,11 @@ EOD;
         if ( $backup_suffix_ok ) {
 ?>
     <div id="mc_main_buttons">
-        <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
+        <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo 'disabled'; } ?>>Backup Tables</button>
         &nbsp;&nbsp;&nbsp;&nbsp;
-        <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
+        <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled'; } ?>>Restore Tables</button>
         &nbsp;&nbsp;&nbsp;&nbsp;
-        <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>
+        <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled'; } ?>>Delete Backup</button>
     </div>
 <?php
         }

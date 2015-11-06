@@ -152,7 +152,8 @@ jQuery( function( ) {
             reduceTableCellContents( table );
             table.find( "tbody td" ).click( function( e ) {
                 jQuery( "div#ddt_x-popup-margin" ).show( );
-                jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent );
+                jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
+                    .css( "background-color", jQuery( this ).css( "background-color" ) );
                 jQuery( "div#ddt_x-detail_popup" ).show( );
             } );
             button.disabled = false;

@@ -50,6 +50,10 @@ table#ddt_x-op_counts input {
     margin-right: 0px;
 }
 
+div#ddt_x-diff_controls {
+    padding:3px 20px;
+}
+
 div#mc_changes_view{
     width: 100%;
     overflow-x: auto;
@@ -120,5 +124,7 @@ div#ddt_x-detail_popup button#ddt_x-close_detail_popup {
 }
 
 div.ddt_x-detail_content {
-    padding:10px;
+    clear: both;
+    padding: 10px;
+    margin: 20px;
 }
