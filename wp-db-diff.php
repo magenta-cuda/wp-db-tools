@@ -200,6 +200,8 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
             echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width:</label>';
             echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="100%">';
+            echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters:</label>';
+            echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate cell contents to this number of characters" value="100">';
             echo '<div id="mc_changes_view"></div>';
         } );
     } );

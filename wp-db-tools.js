@@ -1,13 +1,12 @@
 jQuery( function( ) {
-    
-    var cellContentMaxLength = 100;
-    
+        
     function reduceTableCellContents( table ) {
         if ( ! ( table instanceof jQuery ) ) {
             table = jQuery( table );
         }
+        var cellContentMaxLength = jQuery( "input#ddt_x-table_cell_size" ).val( );
         table.find( "td" ).each( function( ) {
-            var text = this.textContent;
+            var text = this.dataset.origContent ? this.dataset.origContent : this.textContent;
             if ( text.length > cellContentMaxLength ) {
                 this.dataset.origContent = text;
                 this.textContent = text.substr( 0, cellContentMaxLength ) + " ...";
@@ -156,6 +155,10 @@ jQuery( function( ) {
     
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
         jQuery( "table.ddt_x-table_changes" ).css( "width", this.value );
+    } );
+    
+    jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
+        reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table" ) );
     } );
     
 } );
