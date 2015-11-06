@@ -170,7 +170,7 @@ EOD;
 <?php
         if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
-        <label for="mc_enable_diff">Enable Diff</label>
+        <label for="mc_enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff</label>
         <input type="checkbox" name="mc_enable_diff" id="mc_enable_diff" value="enabled">
 <?php
         }
@@ -182,7 +182,9 @@ EOD;
 ?>
     <div id="mc_main_buttons">
         <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"<?php if (  $backup_tables ) { echo ' disabled'; } ?>>Backup Tables</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
         <button id="mc_restore" class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Restore Tables</button>
+        &nbsp;&nbsp;&nbsp;&nbsp;
         <button id="mc_delete"  class="mc-wpdbdt-btn" type="button"<?php if ( !$backup_tables ) { echo 'disabled';  } ?>>Delete Backup</button>
     </div>
 <?php

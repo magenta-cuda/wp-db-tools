@@ -15,7 +15,14 @@ fieldset#mc_table_fields table.mc_table_table td.mc_table_td{
 }
 
 div#mc_main_buttons{
-    padding:20px;
+    padding:3px 20px;
+}
+
+button.mc-wpdbdt-btn {
+    border: 2px solid gray;
+    border-radius: 7px;
+    padding: 5px 10px;
+    margin: 0px;
 }
 
 table#ddt_x-op_counts{
@@ -41,13 +48,6 @@ table#ddt_x-op_counts td {
 table#ddt_x-op_counts input {
     margin-left: 5px;
     margin-right: 0px;
-}
-
-button.mc-wpdbdt-btn {
-    border: 2px solid gray;
-    border-radius: 7px;
-    padding: 3px 10px;
-    margin: 20px;
 }
 
 div#mc_changes_view{

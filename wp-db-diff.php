@@ -158,6 +158,15 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
 ?>
 <h2>Database Diff Tool</h2>
 <?php
+            if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . MC_DIFF_CHANGES_TABLE . '\'' ) ) {
+?>
+<div style="border:2px solid red;padding:10px 25px;margin:20px;">
+There is no diff session active. You must enable the diff option of the &quot;Backup Tool&quot; to use the &quot;Diff Tool&quot;.
+</div>
+<?php
+                return;
+            }
+            
             $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
             $tables = [ ];
             foreach ( $results as $result ) {
@@ -245,7 +254,13 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             sort( $ids[ 'INSERT' ] );
             sort( $ids[ 'UPDATE' ] );
             sort( $ids[ 'DELETE' ] );
+            # remove updates to inserted and deleted rows as the net effect for the session is an insert or delete
             $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'INSERT' ] );
+            $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'DELETE' ] );
+            # remove deleted rows from inserted rows as the net effect for the session is the insert/delete did not occur
+            $ids[ 'INSERT' ] = array_diff( $ids[ 'INSERT' ], $ids[ 'DELETE' ] );
+            # remove inserted rows from deleted rows as the net effect for the session is the insert/delete did not occur
+            $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
             error_log( '$ids=' . print_r( $ids, true ) );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
