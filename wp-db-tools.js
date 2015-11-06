@@ -148,8 +148,11 @@ jQuery( function( ) {
         operation = operation.trim( ).replace( /\s/g, "," );
         this.disabled = true;
         jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation }, function( r ) {
-            var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table" );
+            var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table.ddt_x-table_changes" );
             reduceTableCellContents( table );
+            var width = jQuery( "input#ddt_x-table_width" ).val( );
+            width = jQuery.isNumeric( width ) ? width + "px" : width;
+            table.css( "width", width );
             table.find( "tbody td" ).click( function( e ) {
                 jQuery( "div#ddt_x-popup-margin" ).show( );
                 jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
@@ -162,12 +165,14 @@ jQuery( function( ) {
     
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
         jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value }, function( r ) { } );
-        jQuery( "table.ddt_x-table_changes" ).css( "width", this.value );
+        var width = this.value;
+        width = jQuery.isNumeric( width ) ? width + "px" : width;
+        jQuery( "table.ddt_x-table_changes" ).css( "width", width );
     } );
     
     jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
         jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value }, function( r ) { } );
-        reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table" ) );
+        reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table.ddt_x-table_changes" ) );
     } );
     
     jQuery( "div#ddt_x-detail_popup button#ddt_x-close_detail_popup" ).click( function( e ) {

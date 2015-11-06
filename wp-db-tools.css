@@ -1,3 +1,15 @@
+div.ddt_x-error_message {
+    border: 2px solid red;
+    padding: 10px 25px;
+    margin: 20px;"
+}
+
+div.ddt_x-info_message {
+    border: 2px solid gray;
+    padding: 10px 25px;
+    margin: 20px;"
+}
+
 div.mc_container{
     padding:10px 20px;
 }

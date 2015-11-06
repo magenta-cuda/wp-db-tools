@@ -160,7 +160,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
 <?php
             if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . MC_DIFF_CHANGES_TABLE . '\'' ) ) {
 ?>
-<div style="border:2px solid red;padding:10px 25px;margin:20px;">
+<div class="ddt_x-error_message">
 There is no diff session active. You must enable the diff option of the &quot;Backup Tool&quot; to use the &quot;Diff Tool&quot;.
 </div>
 <?php
@@ -168,6 +168,14 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             }
             
             $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
+            if ( !$results ) {
+?>
+<div class="ddt_x-info_message">
+No database operations have been done on the selected tables.
+</div>
+<?php
+                return;
+            }
             $tables = [ ];
             foreach ( $results as $result ) {
                 error_log( '$result=' . print_r( $result, true ) );
@@ -199,9 +207,9 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             echo '</tbody></table>';
             echo '<div id="ddt_x-diff_controls">';
             echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
-            echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width:</label>';
+            echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width: </label>';
             echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
-            echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters:</label>';
+            echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';
             echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
             echo '</div>';
             echo '<div id="mc_changes_view"></div>';
@@ -247,6 +255,11 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             error_log( '$sql=' . $sql );
             $results   = $wpdb->get_results( $sql );    
             error_log( '$results=' . print_r( $results, true ) );
+?>
+<div class="ddt_x-info_message">
+Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.
+</div>
+<?php
             $ids             = [ ];
             $ids[ 'INSERT' ] = [ ];
             $ids[ 'UPDATE' ] = [ ];
