@@ -92,25 +92,25 @@ jQuery( function( ) {
     
     // Diff Tool
     
-    jQuery( "table#ddt_x-op_counts input[type='checkbox']" ).change( function( e ) {
+    jQuery( "table#ddt_x-op_counts tbody input[type='checkbox']" ).change( function( e ) {
         var checked  = this.checked;
         var tr       = this.parentNode.parentNode;
         var is_first = this.parentNode === jQuery( tr ).find( "td" ).first( )[ 0 ];
 
         if ( checked ) {
-            jQuery( "table#ddt_x-op_counts tr" ).each( function( ) {
+            jQuery( "table#ddt_x-op_counts tbody tr" ).each( function( ) {
                 if ( this !== tr ) {
-                    jQuery( this ).find( "input[type='checked']" ).prop( "checked", false );
+                    jQuery( this ).find( "> td input[type='checkbox']" ).prop( "checked", false );
                 }
             } );
             if ( is_first ) {
-                jQuery( tr ).find( "td input[type='checkbox']" ).prop( "checked", true );
+                jQuery( tr ).find( "> td input[type='checkbox']" ).prop( "checked", true );
             }
         } else {
             if ( is_first ) {
-                jQuery( tr ).find( "td input[type='checkbox']" ).prop( "checked", false );
+                jQuery( tr ).find( "> td input[type='checkbox']" ).prop( "checked", false );
             } else {
-                jQuery( tr ).find( "td" ).first( ).find( "input[type='checkbox']" ).prop( "checked", false );
+                jQuery( tr ).find( "> td" ).first( ).find( "input[type='checkbox']" ).prop( "checked", false );
             }
         }
         jQuery( "button#mc_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
@@ -118,11 +118,11 @@ jQuery( function( ) {
     
     jQuery( "button#mc_view_changes" ).click( function( e ) {
         var button    = this;
-        var checked   = jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" );
+        var checked   = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
         var table     = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
-        var th        = jQuery( "table#ddt_x-op_counts th" );
+        var th        = jQuery( "table#ddt_x-op_counts thead th" );
         var operation = "";
-        jQuery( "table#ddt_x-op_counts input[type='checkbox']" ).each( function( i ) {
+        jQuery( checked[0].parentNode.parentNode ).find( "td input[type='checkbox']" ).each( function( i ) {
             if ( this.checked ) {
                 operation += jQuery(th[i]).text( ) +" ";
             }

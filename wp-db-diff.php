@@ -189,7 +189,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                 $ids = array_merge( $ids, $row_ids );
             }
             error_log( '$tables=' . print_r( $tables, true ) );
-            echo '<table id="ddt_x-op_counts"><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr><tbody>'; 
+            echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
             foreach ( $tables as $table_name => $table ) {
                 $inserts = count( array_unique( $table[ 'INSERT' ] ) );
                 $updates = count( array_unique( $table[ 'UPDATE' ] ) );
@@ -198,7 +198,8 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
             }
             echo '</tbody></table>';
             echo '<button id="mc_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
-            echo ' Table Width:<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px, 150%" value="100%">';
+            echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width:</label>';
+            echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="100%">';
             echo '<div id="mc_changes_view"></div>';
         } );
     } );
