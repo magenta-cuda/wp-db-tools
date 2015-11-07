@@ -249,7 +249,7 @@ if ( defined( 'DOING_AJAX' ) ) {
     
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
-    add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included ) {
+    add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included, $ddt_add_main_menu ) {
         $action = 'backup tables';
         
         if ( !empty( $_POST[ 'ddt_x-enable_diff' ] ) ) {
@@ -290,7 +290,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
-        if ( !empty( $wp_db_diff_included ) ) {
+        if ( !empty( $options[ 'ddt_x-enable_diff' ] ) && !empty( $wp_db_diff_included ) ) {
             ddt_wp_db_diff_start_session( );
         }
         die;

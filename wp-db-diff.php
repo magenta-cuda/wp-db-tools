@@ -33,7 +33,7 @@ Project X: WordPress Database Developer Tools: Diff
  
 namespace mc_x_wp_db_tools {
 
-define( 'MC_DIFF_CHANGES_TABLE', 'mc_diff_modified' );
+define( 'MC_DIFF_CHANGES_TABLE', 'ddt_x_diff_tool_changes_1113' );
 define( 'MC_DIFF_PAGE_NAME', 'ddt_diff_tool' );
 
 function ddt_wp_db_diff_start_session( ) {
@@ -149,70 +149,72 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         $ddt_post_query( $tables_orig, $id_for_table );
     }, $ddt_post_query, $tables_orig, $id_for_table );
     
-    add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options ) {
+    if ( !defined( 'DOING_AJAX' ) ) {
         
-        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
-        # export?
-        add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options ) {
-            global $wpdb;
+        add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options ) {
+            
+            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
+            # export?
+            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options ) {
+                global $wpdb;
 ?>
 <h2>Database Diff Tool</h2>
 <?php
-            if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . MC_DIFF_CHANGES_TABLE . '\'' ) ) {
+                if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . MC_DIFF_CHANGES_TABLE . '\'' ) ) {
 ?>
 <div class="ddt_x-error_message">
 There is no diff session active. You must enable the diff option of the &quot;Backup Tool&quot; to use the &quot;Diff Tool&quot;.
 </div>
 <?php
-                return;
-            }
-            
-            $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
-            if ( !$results ) {
+                    return;
+                }
+                
+                $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
+                if ( !$results ) {
 ?>
 <div class="ddt_x-info_message">
 No database operations have been done on the selected tables.
 </div>
 <?php
-                return;
-            }
-            $tables = [ ];
-            foreach ( $results as $result ) {
-                error_log( '$result=' . print_r( $result, true ) );
-                $table_name = $result->table_name;
-                $operation  = $result->operation;
-                $row_ids    = $result->row_ids;
-                if ( is_serialized( $row_ids ) ) {
-                    $row_ids = unserialize( $row_ids );
-                } else {
-                    $row_ids = [ $row_ids ];
+                    return;
                 }
-                if ( !array_key_exists( $table_name, $tables ) ) {
-                    $tables[ $table_name ] = [ ];
-                    $tables[ $table_name ][ 'INSERT' ] = [ ];
-                    $tables[ $table_name ][ 'UPDATE' ] = [ ];
-                    $tables[ $table_name ][ 'DELETE' ] = [ ];
+                $tables = [ ];
+                foreach ( $results as $result ) {
+                    error_log( '$result=' . print_r( $result, true ) );
+                    $table_name = $result->table_name;
+                    $operation  = $result->operation;
+                    $row_ids    = $result->row_ids;
+                    if ( is_serialized( $row_ids ) ) {
+                        $row_ids = unserialize( $row_ids );
+                    } else {
+                        $row_ids = [ $row_ids ];
+                    }
+                    if ( !array_key_exists( $table_name, $tables ) ) {
+                        $tables[ $table_name ] = [ ];
+                        $tables[ $table_name ][ 'INSERT' ] = [ ];
+                        $tables[ $table_name ][ 'UPDATE' ] = [ ];
+                        $tables[ $table_name ][ 'DELETE' ] = [ ];
+                    }
+                    $ids =& $tables[ $table_name ][ $operation ];
+                    $ids = array_merge( $ids, $row_ids );
                 }
-                $ids =& $tables[ $table_name ][ $operation ];
-                $ids = array_merge( $ids, $row_ids );
-            }
-            error_log( '$tables=' . print_r( $tables, true ) );
-            echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
-            foreach ( $tables as $table_name => $table ) {
-                $inserts = count( array_unique( $table[ 'INSERT' ] ) );
-                $updates = count( array_unique( $table[ 'UPDATE' ] ) );
-                $deletes = count( array_unique( $table[ 'DELETE' ] ) );
-                echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
-            }
-            echo '</tbody></table>';
-            echo '<div id="ddt_x-diff_controls">';
-            echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
-            echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width: </label>';
-            echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
-            echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';
-            echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
-            echo '</div>';
-            echo '<div id="mc_changes_view"></div>';
+                error_log( '$tables=' . print_r( $tables, true ) );
+                echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
+                foreach ( $tables as $table_name => $table ) {
+                    $inserts = count( array_unique( $table[ 'INSERT' ] ) );
+                    $updates = count( array_unique( $table[ 'UPDATE' ] ) );
+                    $deletes = count( array_unique( $table[ 'DELETE' ] ) );
+                    echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
+                }
+                echo '</tbody></table>';
+                echo '<div id="ddt_x-diff_controls">';
+                echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
+                echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width: </label>';
+                echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
+                echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';
+                echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
+                echo '</div>';
+                echo '<div id="mc_changes_view"></div>';
 ?>
 <div id="ddt_x-popup-margin">
 </div>
@@ -224,16 +226,18 @@ No database operations have been done on the selected tables.
     </div>
 </div>
 <?php
+            } );
         } );
-    } );
     
-    add_action( 'admin_enqueue_scripts', function( $hook ) {
-        if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
-            wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
-            wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
-        }
-    } );
-    
+        add_action( 'admin_enqueue_scripts', function( $hook ) {
+            if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
+                wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
+                wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
+            }
+        } );
+
+    }   # if ( !defined( 'DOING_AJAX' ) ) {
+   
     if ( defined( 'DOING_AJAX' ) ) {
 
         add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
