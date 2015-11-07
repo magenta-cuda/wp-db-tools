@@ -13,7 +13,13 @@ jQuery( function( ) {
             }
         } );
     }
+
+    // enable backup button only if a table is selected
     
+    jQuery( "input.ddt_x-table_checkbox[type='checkbox']" ).change( function( e ) {
+        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox[type='checkbox']:checked" ).length === 0 );
+    } );
+
     // submit form only on the click of backup button, i.e. ignore CR on form elements
     jQuery( "form#mc_tables" ).submit( function( e ) {
         console.log( "submit:", e );
@@ -158,15 +164,16 @@ jQuery( function( ) {
                 var index     = clickedTr.find( "td" ).index( this );
                 var updated   = clickedTr.hasClass( "ddt_x-changes_updated" );
                 var original  = clickedTr.hasClass( "ddt_x-changes_original" );
+                var that      = null;
                 if ( updated ) {
                     var prevTr = clickedTr.prev( "tr" );
                     if ( prevTr && prevTr.hasClass( "ddt_x-changes_original" ) ) {
-                        var that = prevTr.find( "td" )[ index ];
+                        that = prevTr.find( "td" )[ index ];
                     }
                 } else if ( original ) {
                     var nextTr = clickedTr.next( "tr" );
                     if ( nextTr && nextTr.hasClass( "ddt_x-changes_updated" ) ) {
-                        var that = nextTr.find( "td" )[ index ];
+                        that = nextTr.find( "td" )[ index ];
                     }
                 }
                 var main = jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
