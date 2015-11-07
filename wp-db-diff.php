@@ -127,12 +127,15 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $doing_my_query = TRUE;
                 $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
+                if ( !$results ) {
+                    $results = -1;
+                }
             } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
             } else {
                 error_log( 'ddt_post_query():unmatched: ' . $last_query );
             }
-            if ( !empty( $table ) && !empty( $results ) ) {
+            if ( !empty( $table ) && !empty( $results ) && $results !== -1 ) {
                 $doing_my_query = TRUE;
                 $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
                 $doing_my_query = FALSE;
@@ -152,11 +155,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     
     if ( !defined( 'DOING_AJAX' ) ) {
         
-        add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options ) {
+        add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options, $id_for_table ) {
             
             add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
             # export?
-            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options ) {
+            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options, $id_for_table ) {
                 global $wpdb;
 ?>
 <h2>Database Diff Tool</h2>
@@ -202,9 +205,24 @@ No database operations have been done on the selected tables.
                 error_log( '$tables=' . print_r( $tables, true ) );
                 echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
                 foreach ( $tables as $table_name => $table ) {
-                    $inserts = count( array_unique( $table[ 'INSERT' ] ) );
-                    $updates = count( array_unique( $table[ 'UPDATE' ] ) );
-                    $deletes = count( array_unique( $table[ 'DELETE' ] ) );
+                    $table_id = $id_for_table[ $table_name ];
+                    $inserts  = array_unique( $table[ 'INSERT' ] );
+                    $deletes  = array_unique( $table[ 'DELETE' ] );
+                    if ( $inserts ) {
+                        # get the deleted inserts which are not yet included in $deletes
+                        $existing_inserts = $wpdb->get_col( "SELECT $table_id FROM $table_name WHERE $table_id IN ( " . implode( ', ', $inserts ) . ' )' );
+                        if ( count( $existing_inserts ) < count( $inserts ) ) {
+                            $deletes = array_unique( array_merge( $deletes, array_diff( $inserts, $existing_inserts ) ) );
+                        }
+                    }
+                    $updates     = array_unique( $table[ 'UPDATE' ] );
+                    $inserts_all = $inserts;
+                    $inserts     = array_diff( $inserts, $deletes );
+                    $updates     = array_diff( $updates, $inserts, $deletes );
+                    $deletes     = array_diff( $deletes, $inserts_all );
+                    $inserts     = count( $inserts );
+                    $updates     = count( $updates );
+                    $deletes     = count( $deletes );
                     echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
                 }
                 echo '</tbody></table>';
