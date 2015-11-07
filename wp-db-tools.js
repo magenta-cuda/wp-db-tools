@@ -40,9 +40,11 @@ jQuery( function( ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
-                jQuery( "#mc_restore"      ).prop( "disabled", false );
-                jQuery( "#mc_delete"       ).prop( "disabled", false );
-                jQuery( "#mc_table_fields" ).prop( "disabled", true  );
+                jQuery( "div#mc_main_buttons button#mc_restore"                  ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#mc_delete"                   ).prop( "disabled", false );
+                jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", true  );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", true  );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", true  );
             }
         } );
     } );
@@ -65,17 +67,19 @@ jQuery( function( ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
-                jQuery( "#mc_backup"       ).prop( "disabled", false );
-                jQuery( "#mc_restore"      ).prop( "disabled", true  );
-                jQuery( "#mc_table_fields" ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#mc_backup"                   ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#mc_restore"                  ).prop( "disabled", true  );
+                jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", false );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", false );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", false );
             }
         } );
     } );
     
     // Verify backup suffix on change and CR keydown events
     
-    jQuery( "input#mc_backup_suffix" ).change( function( e ) {
-        var table_pane   = jQuery( "fieldset#mc_table_fields" );
+    jQuery( "input#ddt_x-backup_suffix" ).change( function( e ) {
+        var table_pane   = jQuery( "fieldset#ddt_x-table_fields" );
         var error_pane   = jQuery( "div#mc_db_tools_error_pane" );
         var main_buttons = jQuery( "div#mc_main_buttons" );
         error_pane.text( "checking backup suffix..." ).show( );
@@ -108,7 +112,7 @@ jQuery( function( ) {
     // Also verify backup suffix on click of the Verify button
     
     jQuery( "button#mc_suffix_verify" ).click( function( e ) {
-        jQuery( "input#mc_backup_suffix" ).change( );
+        jQuery( "input#ddt_x-backup_suffix" ).change( );
     } );
     
     // Diff Tool
