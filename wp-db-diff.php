@@ -90,7 +90,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             
             error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
             
-            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s+)?(`)?(\w+)\4.+#i', $last_query, $matches ) ) {
+            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 error_log( 'insert:$matches=' . print_r( $matches, true ) );
                 $table     = $matches[ 5 ];
                 if ( !in_array( $table, $tables_orig ) ) {
@@ -102,7 +102,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 } else {
                     $results = mysql_insert_id( $wpdb->dbh );
                 }
-            } else if ( preg_match( '#^\s*update\s+(low_priority\s+)?(`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 error_log( 'update:$matches=' . print_r( $matches, true ) );
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
@@ -115,7 +115,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $results        = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
                 error_log( 'update:$results=' . print_r( $results, true ) );
-            } else if ( preg_match( '/^\s*delete\s+(low_priority\s+|quick\s+)*from\s+(`)?(\w+)\2\s+where\s(.*)$/i', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
                 error_log( '$delete:matches=' . print_r( $matches, true ) );
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
@@ -128,10 +128,11 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
             } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
+            } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
             } else {
                 error_log( 'ddt_post_query():unmatched: ' . $last_query );
             }
-            if ( !empty( $table ) ) {
+            if ( !empty( $table ) && !empty( $results ) ) {
                 $doing_my_query = TRUE;
                 $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
                 $doing_my_query = FALSE;
