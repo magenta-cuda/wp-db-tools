@@ -40,8 +40,9 @@ jQuery( function( ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
-                jQuery( "div#mc_main_buttons button#mc_restore"                  ).prop( "disabled", false );
-                jQuery( "div#mc_main_buttons button#mc_delete"                   ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
+                jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
                 jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", true  );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", true  );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", true  );
@@ -51,7 +52,7 @@ jQuery( function( ) {
     
     // Restore from backup
     
-    jQuery( "button.mc-wpdbdt-btn#mc_restore" ).click( function( e ) {
+    jQuery( "button.mc-wpdbdt-btn#ddt_x-restore" ).click( function( e ) {
         jQuery( "#mc_status" ).html( "sending..." );
         jQuery.post( ajaxurl, { action: "mc_restore_tables" }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
@@ -60,7 +61,7 @@ jQuery( function( ) {
     
     // Delete backup
     
-    jQuery( "button.mc-wpdbdt-btn#mc_delete" ).click( function( e ) {
+    jQuery( "button.mc-wpdbdt-btn#ddt_x-delete" ).click( function( e ) {
         var button = this;
         jQuery( "#mc_status" ).html( "sending..." );
         jQuery.post( ajaxurl, { action: "mc_delete_backup" }, function ( response ) {
@@ -68,12 +69,19 @@ jQuery( function( ) {
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
                 jQuery( "div#mc_main_buttons button#mc_backup"                   ).prop( "disabled", false );
-                jQuery( "div#mc_main_buttons button#mc_restore"                  ).prop( "disabled", true  );
+                jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );
+                jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", true  );
                 jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", false );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", false );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", false );
             }
         } );
+    } );
+    
+    jQuery( "button.mc-wpdbdt-btn#ddt_x-diff_tool" ).click( function( e ) {
+        var href = window.location.href;
+        href = href.substr( 0, href.indexOf( "?page=" ) + 6 ) + "ddt_diff_tool";
+        window.open( href, "_blank" );
     } );
     
     // Verify backup suffix on change and CR keydown events

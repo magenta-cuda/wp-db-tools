@@ -36,7 +36,7 @@ Most useful for repeated testing, i.e. backup table(s), test, restore table(s), 
  
 namespace mc_x_wp_db_tools {
 
-define( 'MC_BACKUP_PAGE_NAME', 'easy_backup_for_testing' );
+define( 'MC_BACKUP_PAGE_NAME', 'ddt_backup_tool' );
 
 define( 'MC_BACKUP', 'mc_backup' );
 
@@ -192,12 +192,14 @@ EOD;
         if ( $backup_suffix_ok ) {
 ?>
     <div id="mc_main_buttons">
-        <button id="mc_backup"  class="mc-wpdbdt-btn" type="button"
-            <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>
-        &nbsp;&nbsp;&nbsp;&nbsp;<button id="mc_restore" class="mc-wpdbdt-btn" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>
-        &nbsp;&nbsp;&nbsp;&nbsp;<button id="mc_delete"  class="mc-wpdbdt-btn" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>
+        <button id="mc_backup"       class="mc-wpdbdt-btn" type="button"
+            <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <button id="ddt_x-restore"   class="mc-wpdbdt-btn" type="button"
+            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <button id="ddt_x-delete"    class="mc-wpdbdt-btn" type="button"
+            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>&nbsp;&nbsp;&nbsp;&nbsp;
+        <button id="ddt_x-diff_tool" class="mc-wpdbdt-btn" type="button"
+            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
     </div>
 <?php
         }
