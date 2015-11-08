@@ -321,14 +321,20 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
             array_unshift( $columns, $table_id );
             error_log( '$columns=' . print_r( $columns, true ) );
             $columns_imploded = implode( ', ', $columns );
-            $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
-                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
-            $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
-                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
-            $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
-                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
-            $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
-                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
+            if (  $ids[ 'INSERT' ] ) {
+                $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
+            }
+            if ( $ids[ 'UPDATE' ] ) {
+                $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+                $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+            }
+            if ( $ids[ 'DELETE' ] ) {
+                $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
+            }
             echo '<table class="ddt_x-table_changes mc_table_changes">';
             echo '<th>Row Status</th>';
             foreach ( $columns as $column ) {
@@ -369,7 +375,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     }
                     echo '</tr>';
                 } else if ( $operation === 'UPDATE' ) {
-                    if ( !array_key_exists( $id, $originals ) ) {
+                    if ( !array_key_exists( $id, $originals ) || !array_key_exists( $id, $updates ) ) {
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
                         continue;
                     }
