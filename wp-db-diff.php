@@ -321,14 +321,42 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
             array_unshift( $columns, $table_id );
             error_log( '$columns=' . print_r( $columns, true ) );
             $columns_imploded = implode( ', ', $columns );
-            if ( $ids[ 'INSERT' ] ) {
-                echo '<table class="ddt_x-table_changes mc_table_changes">';
-                foreach ( $columns as $column ) {
-                    echo '<th>' . $column . '</th>';
+            $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
+            $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
+                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+            $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+            $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
+            echo '<table class="ddt_x-table_changes mc_table_changes">';
+            foreach ( $columns as $column ) {
+                echo '<th>' . $column . '</th>';
+            }
+            $insert_ids = $ids[ 'INSERT' ];
+            $update_ids = $ids[ 'UPDATE' ];
+            $delete_ids = $ids[ 'DELETE' ];
+            while ( TRUE ) {
+                $insert_id = current( $insert_ids );
+                $update_id = current( $update_ids );
+                $delete_id = current( $delete_ids );
+                if ( $insert_id === FALSE && $update_id === FALSE && $delete_id === FALSE ) {
+                    break;
                 }
-                $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
-                foreach ( $ids[ 'INSERT' ] as $id ) {
+                if ( $insert_id !== FALSE && ( $update_id === FALSE || $insert_id < $update_id ) && ( $delete_id === FALSE || $insert_id < $delete_id ) ) {
+                    $operation = 'INSERT';
+                    $id = $insert_id;
+                    next( $insert_ids );
+                } else if ( $update_id !== FALSE && ( $insert_id === FALSE || $update_id < $insert_id ) && ( $delete_id === FALSE || $update_id < $delete_id ) ) {
+                    $operation  = 'UPDATE';
+                    $id = $update_id;
+                    next( $update_ids );
+                } else {
+                    $operation = 'DELETE';
+                    $id = $delete_id;
+                    next( $delete_ids );
+                }
+                if ( $operation === 'INSERT' ) {
                     if ( !array_key_exists( $id, $inserts) ) {
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad INSERT id \"$id\" for table \"$table\"." );
                         continue;
@@ -338,19 +366,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         echo '<td class="ddt_x-field_changed">' . $inserts[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
-                }
-                echo '</table>';
-            }
-            if ( $ids[ 'UPDATE' ] ) {
-                echo '<table class="ddt_x-table_changes mc_table_changes">';
-                foreach ( $columns as $column ) {
-                    echo '<th>' . $column . '</th>';
-                }
-                $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
-                $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
-                foreach ( $ids[ 'UPDATE' ] as $id ) {
+                } else if ( $operation === 'UPDATE' ) {
                     if ( !array_key_exists( $id, $originals ) ) {
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad UPDATE id \"$id\" for table \"$table\"." );
                         continue;
@@ -367,17 +383,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         echo '<td' . $td_class . '>' . $updates[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
-                }
-                echo '</table>';
-            }
-            if ( $ids[ 'DELETE' ] ) {
-                echo '<table class="ddt_x-table_changes mc_table_changes">';
-                foreach ( $columns as $column ) {
-                    echo '<th>' . $column . '</th>';
-                }
-                $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
-                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
-                foreach ( $ids[ 'DELETE' ] as $id ) {
+                } else if ( $operation === 'DELETE' ) {
                     if ( !array_key_exists( $id, $deletes ) ) {
                         error_log( "ERROR:action:wp_ajax_ddt_x-diff_view_changes:bad DELETE id \"$id\" for table \"$table\"." );
                         continue;
@@ -388,8 +394,8 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     }
                     echo '</tr>';
                 }
-                echo '</table>';
-            }
+            }   # while ( TRUE ) {
+            echo '</table>';
             die;
         } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
            
