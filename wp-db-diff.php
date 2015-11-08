@@ -330,6 +330,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
             $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                 . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             echo '<table class="ddt_x-table_changes mc_table_changes">';
+            echo '<th>Row Status</th>';
             foreach ( $columns as $column ) {
                 echo '<th>' . $column . '</th>';
             }
@@ -362,6 +363,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_updated">';
+                    echo '<td>INSERTED</td>';
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . $inserts[ $id ]->$column . '</td>';
                     }
@@ -372,12 +374,14 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_original">';
+                    echo '<td>ORIGINAL</td>';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . $originals[ $id ]->$column . '</td>';
                     }
                     echo '</tr>';
                     echo '<tr class="ddt_x-changes_updated">';
+                    echo '<td>UPDATED</td>';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . $updates[ $id ]->$column . '</td>';
@@ -389,6 +393,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_original">';
+                    echo '<td>DELETED</td>';
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . $deletes[ $id ]->$column . '</td>';
                     }
