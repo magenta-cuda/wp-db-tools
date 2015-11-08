@@ -210,6 +210,7 @@ jQuery( function( ) {
                 jQuery( "div#ddt_x-detail_popup" ).show( );
                 jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
+            table.tablesorter();
             button.disabled = false;
         } );
     } );

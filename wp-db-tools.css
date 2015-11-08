@@ -84,6 +84,15 @@ table.mc_table_changes th, table.mc_table_changes td {
     background-color: #CCC;
 }
 
+table.mc_table_changes th {
+    background-color:rgb(128,128,128);
+    background-image:url(data:image/gif;base64,R0lGODlhFQAJAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAkAAAIXjI+AywnaYnhUMoqt3gZXPmVg94yJVQAAOw==);
+    background-position:100% 50%;
+    background-repeat:no-repeat;
+    color:black;
+    text-align:center;
+}
+
 table.ddt_x-table_changes tr.ddt_x-changes_original td {
     background-color: #FFECEC;
 }

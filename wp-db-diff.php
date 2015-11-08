@@ -250,8 +250,9 @@ No database operations have been done on the selected tables.
     
         add_action( 'admin_enqueue_scripts', function( $hook ) {
             if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
-                wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
-                wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
+                wp_enqueue_style(  'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.css'                         );
+                wp_enqueue_script( 'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.js',            [ 'jquery' ] );
+                wp_enqueue_script( 'jquery.tablesorter', plugin_dir_url( __FILE__ ) . 'jquery.tablesorter.min.js', [ 'jquery' ] );
             }
         } );
 
@@ -335,11 +336,11 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
-            echo '<table class="ddt_x-table_changes mc_table_changes">';
-            echo '<th>Row Status</th>';
+            echo '<table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 echo '<th>' . $column . '</th>';
             }
+            echo '</thead><tbody>';
             $insert_ids = $ids[ 'INSERT' ];
             $update_ids = $ids[ 'UPDATE' ];
             $delete_ids = $ids[ 'DELETE' ];
@@ -406,7 +407,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     echo '</tr>';
                 }
             }   # while ( TRUE ) {
-            echo '</table>';
+            echo '</tbody></table>';
             die;
         } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
            
