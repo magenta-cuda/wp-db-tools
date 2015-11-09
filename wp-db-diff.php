@@ -73,30 +73,24 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             }
         }
     }
-    error_log( '$id_for_table=' . print_r( $id_for_table, true ) );
     
     $ddt_post_query = function ( $tables_orig, $id_for_table ) use ( $options ) {
         global $wpdb;
-        
-        static $regex_or_tables_orig = NULL;
-        if ( !$regex_or_tables_orig ) {
-            $regex_or_tables_orig = '#(\s|`)(' . implode( '|', $tables_orig ) . ')\1#';
-            error_log( 'ddt_post_query():$regex_or_tables_orig=' . $regex_or_tables_orig );
+
+        static $regex_of_tables_orig = NULL;
+        if ( !$regex_of_tables_orig ) {
+            $regex_of_tables_orig = '#(\s|`)(' . implode( '|', $tables_orig ) . ')\1#';
         }
-        
+ 
         static $doing_my_query = FALSE;
-        
         if ( $doing_my_query ) {
+            # prevent infinite recursion
             return;
         }
+
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
-        #error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
-       
-        if ( $last_query && preg_match( $regex_or_tables_orig, $last_query ) === 1 ) {
-            
-            error_log( 'ddt_post_query():$wpdb->last_query=' . $last_query );
-            
+        if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
             if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 error_log( 'insert:$matches=' . print_r( $matches, true ) );
                 $table     = $matches[ 5 ];
@@ -147,7 +141,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
                 $doing_my_query = FALSE;
             }
-        }   # if ( $last_query && preg_match( $regex_or_tables_orig, $last_query ) === 1 ) {
+        }   # if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
     };
 
     add_filter( 'query', function( $query ) use ( $ddt_post_query, $tables_orig, $id_for_table ) {
@@ -191,7 +185,6 @@ No database operations have been done on the selected tables.
                 }
                 $tables = [ ];
                 foreach ( $results as $result ) {
-                    error_log( '$result=' . print_r( $result, true ) );
                     $table_name = $result->table_name;
                     $operation  = $result->operation;
                     $row_ids    = $result->row_ids;
@@ -378,8 +371,9 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     }
                     echo '<tr class="ddt_x-changes_updated">';
                     echo '<td>INSERTED</td>';
+                    $insert = $inserts[ $id ];
                     foreach ( $columns as $column ) {
-                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $inserts[ $id ]->$column ) . '</td>';
+                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $insert->$column ) . '</td>';
                     }
                     echo '</tr>';
                 } else if ( $operation === 'UPDATE' ) {
@@ -389,16 +383,18 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     }
                     echo '<tr class="ddt_x-changes_original">';
                     echo '<td>ORIGINAL</td>';
+                    $original = $originals[ $id ];
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
-                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $originals[ $id ]->$column ) . '</td>';
+                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $original->$column ) . '</td>';
                     }
                     echo '</tr>';
                     echo '<tr class="ddt_x-changes_updated">';
                     echo '<td>UPDATED</td>';
+                    $update = $updates[ $id ];
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
-                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $updates[ $id ]->$column ) . '</td>';
+                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $update->$column ) . '</td>';
                     }
                     echo '</tr>';
                 } else if ( $operation === 'DELETE' ) {
@@ -408,8 +404,9 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     }
                     echo '<tr class="ddt_x-changes_original">';
                     echo '<td>DELETED</td>';
+                    $delete = $deletes[ $id ];
                     foreach ( $columns as $column ) {
-                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $deletes[ $id ]->$column ) . '</td>';
+                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $delete->$column ) . '</td>';
                     }
                     echo '</tr>';
                 }
