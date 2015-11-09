@@ -4,17 +4,23 @@ Donate link:
 Tags: shortcode, tool, tester
 Requires at least: 3.6
 Tested up to: 4.3.1
-Stable tag: 1.0
+Stable tag: 2.0
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 WordPress database tools for debugging.
 
 == Description ==
 These tools are intended to be used by WordPress developers for testing and debugging.
+
 The backup tool lets you do a quick backup of individual MySQL tables by duplication into the same database, i.e. using "CREATE TABLE copy LIKE orig; INSERT INTO copy SELECT * FROM orig;".
 Useful for testing when you know only some tables will be changed so you don't have to save and restore the entire database.
 Most useful for repeated testing, i.e. backup table(s), test, restore table(s), test, restore table(s), ... test, restore table(s), delete backup.
+
+The diff tool shows the rows in the selected tables that were inserted, updated or deleted.
+For updated rows the columns that have changed values have the values highlighted - green for the original value and red for the new value.
+
 Please visit [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/) for a very quick introduction.
+
 **This plugin requires at least PHP 5.4.**
 
 == Installation ==
@@ -30,14 +36,17 @@ No, the backup is done by creating additional tables in the same database so if 
    
 == Screenshots ==
 1. Backup Tool
+2. Diff Tool
 
 == Changelog ==
-
+= 2.0 =
+* Added the diff tool
 = 1.0 =
 * Initial release.
   
 == Upgrade Notice ==
-
+= 2.0 =
+* Added the diff tool
 = 1.0 =
 * Initial release.
 

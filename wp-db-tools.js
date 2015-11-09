@@ -151,7 +151,7 @@ jQuery( function( ) {
     
     function prettifyTableCellContent( content ) {
         try {
-            return JSON.stringify( JSON.parse( content ), 4);
+            return "<pre>" + JSON.stringify( JSON.parse( content ), null, 4 ) +"</pre>";
         } catch ( e ) {
             return content;
         }
@@ -197,11 +197,11 @@ jQuery( function( ) {
                     }
                 }
                 var main = jQuery( "div#ddt_x-detail_content" )
-                    .text( prettifyTableCellContent( this.dataset.origContent ? this.dataset.origContent : this.textContent ) )
+                    .html( prettifyTableCellContent( this.dataset.origContent ? this.dataset.origContent : this.textContent ) )
                     .css( "background-color", jQuery( this ).css( "background-color" ) );
                 var other = jQuery( "div#ddt_x-detail_content_other" );
                 if ( that ) {
-                    other.text( prettifyTableCellContent( that.dataset.origContent ? that.dataset.origContent : that.textContent ) )
+                    other.html( prettifyTableCellContent( that.dataset.origContent ? that.dataset.origContent : that.textContent ) )
                         .css( "background-color", jQuery( that ).css( "background-color" ) );
                     main.css( "width", "47%" );
                     if ( updated ) {
