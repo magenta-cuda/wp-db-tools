@@ -149,6 +149,14 @@ jQuery( function( ) {
         jQuery( "button#ddt_x-diff_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
     } );
     
+    function prettifyTableCellContent( content ) {
+        try {
+            return JSON.stringify( JSON.parse( content ), 4);
+        } catch ( e ) {
+            return content;
+        }
+    }
+    
     jQuery( "button#ddt_x-diff_view_changes" ).click( function( e ) {
         var button    = this;
         var checked   = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
@@ -188,11 +196,12 @@ jQuery( function( ) {
                         that = nextTr.find( "td" )[ index ];
                     }
                 }
-                var main = jQuery( "div#ddt_x-detail_content" ).text( this.dataset.origContent ? this.dataset.origContent : this.textContent )
+                var main = jQuery( "div#ddt_x-detail_content" )
+                    .text( prettifyTableCellContent( this.dataset.origContent ? this.dataset.origContent : this.textContent ) )
                     .css( "background-color", jQuery( this ).css( "background-color" ) );
                 var other = jQuery( "div#ddt_x-detail_content_other" );
                 if ( that ) {
-                    other.text( that.dataset.origContent ? that.dataset.origContent : that.textContent )
+                    other.text( prettifyTableCellContent( that.dataset.origContent ? that.dataset.origContent : that.textContent ) )
                         .css( "background-color", jQuery( that ).css( "background-color" ) );
                     main.css( "width", "47%" );
                     if ( updated ) {

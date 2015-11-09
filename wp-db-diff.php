@@ -47,6 +47,13 @@ function ddt_wp_db_diff_end_session( ) {
     $wpdb->query( 'DROP TABLE ' . MC_DIFF_CHANGES_TABLE );
 };
 
+function ddt_wp_db_diff_prettify( $content ) {
+    if ( is_serialized( $content ) ) {
+        return json_encode( unserialize( $content ) );
+    }
+    return $content;
+}
+
 function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     global $wpdb;
     
@@ -372,7 +379,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     echo '<tr class="ddt_x-changes_updated">';
                     echo '<td>INSERTED</td>';
                     foreach ( $columns as $column ) {
-                        echo '<td class="ddt_x-field_changed">' . $inserts[ $id ]->$column . '</td>';
+                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $inserts[ $id ]->$column ) . '</td>';
                     }
                     echo '</tr>';
                 } else if ( $operation === 'UPDATE' ) {
@@ -384,14 +391,14 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     echo '<td>ORIGINAL</td>';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
-                        echo '<td' . $td_class . '>' . $originals[ $id ]->$column . '</td>';
+                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $originals[ $id ]->$column ) . '</td>';
                     }
                     echo '</tr>';
                     echo '<tr class="ddt_x-changes_updated">';
                     echo '<td>UPDATED</td>';
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
-                        echo '<td' . $td_class . '>' . $updates[ $id ]->$column . '</td>';
+                        echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $updates[ $id ]->$column ) . '</td>';
                     }
                     echo '</tr>';
                 } else if ( $operation === 'DELETE' ) {
@@ -402,7 +409,7 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
                     echo '<tr class="ddt_x-changes_original">';
                     echo '<td>DELETED</td>';
                     foreach ( $columns as $column ) {
-                        echo '<td class="ddt_x-field_changed">' . $deletes[ $id ]->$column . '</td>';
+                        echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $deletes[ $id ]->$column ) . '</td>';
                     }
                     echo '</tr>';
                 }
