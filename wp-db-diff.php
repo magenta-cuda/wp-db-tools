@@ -129,6 +129,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
                 if ( !$results ) {
+                    # this is a delete of a row that was inserted in this session
                     $results = -1;
                 }
             } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
@@ -137,6 +138,8 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 error_log( 'ddt_post_query():unmatched: ' . $last_query );
             }
             if ( !empty( $table ) && !empty( $results ) && $results !== -1 ) {
+                # omit deletes of rows inserted in this session since the row id is not known
+                # and anyway the net result with respect to the session is that the insert did not occur
                 $doing_my_query = TRUE;
                 $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
                 $doing_my_query = FALSE;
@@ -150,7 +153,6 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     } );
 
     register_shutdown_function( function( $ddt_post_query, $tables_orig, $id_for_table ) {
-        error_log( 'shutdown:' );
         $ddt_post_query( $tables_orig, $id_for_table );
     }, $ddt_post_query, $tables_orig, $id_for_table );
     
@@ -202,7 +204,6 @@ No database operations have been done on the selected tables.
                     $ids =& $tables[ $table_name ][ $operation ];
                     $ids = array_merge( $ids, $row_ids );
                 }
-                error_log( '$tables=' . print_r( $tables, true ) );
                 echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
                 foreach ( $tables as $table_name => $table ) {
                     $table_id = $id_for_table[ $table_name ];
@@ -262,7 +263,6 @@ No database operations have been done on the selected tables.
 
         add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
             global $wpdb;
-            error_log( '$_POST=' . print_r( $_POST, true ) );
             $suffix    = $options[ 'ddt_x-orig_suffix' ];
             $table     = $_POST[ 'table' ];
             $table_id  = $id_for_table[ $table ];
@@ -275,16 +275,13 @@ No database operations have been done on the selected tables.
             $operation = array_filter( $operation, function( $v ) {
                 return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE' ] );
             } );
-            $sql       = $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
-                                             . ' WHERE table_name = %s AND operation IN ( '
-                                             . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
-                                             . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) );
-            error_log( '$sql=' . $sql );
-            $results   = $wpdb->get_results( $sql );    
-            error_log( '$results=' . print_r( $results, true ) );
+            $results   = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
+                             . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
+                             . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
 ?>
 <div class="ddt_x-info_message">
-Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.
+Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.<br>
+The columns are sortable and sorting may bring related rows closer together where they may be easier to compare.
 </div>
 <?php
             $ids             = [ ];
@@ -314,13 +311,11 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
             $ids[ 'INSERT' ] = array_diff( $ids[ 'INSERT' ], $ids[ 'DELETE' ] );
             # remove inserted rows from deleted rows as the net effect for the session is the insert/delete did not occur
             $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
-            error_log( '$ids=' . print_r( $ids, true ) );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
                 return $v !== $table_id;
             } );
             array_unshift( $columns, $table_id );
-            error_log( '$columns=' . print_r( $columns, true ) );
             $columns_imploded = implode( ', ', $columns );
             if (  $ids[ 'INSERT' ] ) {
                 $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
