@@ -29,6 +29,11 @@ License: GPL2
 /*
 Project X: WordPress Database Developer Tools: Diff
 
+Diff works by spying on database operations using the filter 'query'. This will intercept all database operations done through the Wordpress API,
+e.g. $wpdb->get_results, $wpdb->query, ... update_post_meta (which will call $wpdb->update ), ... Of course, it will not spy on database operations
+done directly through the PHP MySQL API, e.g. mysqli_query, mysql_query, ... Further, it cannot spy on database operations that occur before the
+filter is installed. The filter is installed when the plugin is loaded which is probably early enough for most uses but will not spy on database
+operations done on the load of plugins loaded before this plugin.
  */
  
 namespace mc_x_wp_db_tools {
@@ -56,14 +61,18 @@ function ddt_wp_db_diff_prettify( $content ) {
 
 function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
     $length = strlen( $buffer );
+    $first_start = NULL;
+    $first_quote = NULL;
     while ( $position < $length && ctype_space( substr( $buffer, $position, 1 ) ) ) {
         ++$position;
     }
     if ( $position === $length ) {
         return FALSE;
     }
+at_start_of_token:
     $char = substr( $buffer, $position, 1 );
     if ( ctype_digit( $char ) ) {
+        $quote = '';
         $start = $position++;
         while ( $position < $length && ctype_digit( substr( $buffer, $position, 1 ) ) ) {
             ++$position;
@@ -88,11 +97,26 @@ function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
             }
         }
     }
+    while ( $position < $length && ctype_space( substr( $buffer, $position, 1 ) ) ) {
+        ++$position;
+    }
+    if ( $position < $length && ( substr_compare( $buffer, '\'', $position, 1 ) === 0 || substr_compare( $buffer, '"', $position, 1 ) === 0 ) ) {
+        # this is a concatenation
+        if ( !$first_start ) {
+            $first_start = $start;
+            $first_quote = $quote;
+        }
+        goto at_start_of_token;   # the first goto I have used in 3 years of PHP programming
+    }
     if ( $position < $length && substr_compare( $buffer, ',', $position, 1 ) === 0 ) {
         ++$position;
     }
-    return substr( $buffer, $start, $end - $start );
-}
+    if ( !$first_start ) {
+        $first_start = $start;
+        $first_quote = $quote;
+    }
+    return $first_quote . substr( $buffer, $first_start, $end - $first_start ) . $quote;
+}   # function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
 
 function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     global $wpdb;
@@ -146,17 +170,21 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 if ( !$results ) {
                     # the primary key must have been specified so ...
                     if ( preg_match ( '#\(\s*((\w+,\s*)*(\w+))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#i', $last_query, $matches ) ) {
-                        error_log( 'ddt_post_query():INSERT:$matches=' . print_r( $matches, true ) );
+                        # parse column names
                         preg_match_all( '#\w+#', $matches[ 1 ], $fields );
-                        error_log( 'ddt_post_query():INSERT:$fields=' . print_r( $fields, true ) );
+                        # find the position of the primary key
                         if ( ( $index = array_search( $id_for_table[ $table ], $fields[ 0 ] ) ) !== FALSE ) {
-                            error_log( 'ddt_post_query():INSERT:$index=' . $index );
                             $values = $matches[ 4 ];
                             $position = 0;
                             for ( $i = 0; $i <= $index; $i++ ) {
+                                # parse column values until the corresponding position of the primary key
                                 $value = ddt_wp_db_diff_get_next_mysql_token( $values, $position );
                             }
-                            $results = $value;
+                            if ( preg_match( '#^(\'|")(.*)\1$#', $value, $matches ) ) {
+                                $results = $matches[ 2 ];
+                            } else {
+                                $results = $value;
+                            }
                         }   
                     }
                     if ( !$results ) {
