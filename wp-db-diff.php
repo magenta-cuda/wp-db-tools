@@ -91,7 +91,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
-            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
+            if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
                 if ( !in_array( $table, $tables_orig ) ) {
@@ -102,6 +102,10 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                     $results = mysqli_insert_id( $wpdb->dbh );
                 } else {
                     $results = mysql_insert_id( $wpdb->dbh );
+                }
+                if ( !$results ) {
+                    error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );
+                    # TODO: handle inserts with specified primary key
                 }
             } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 # UPDATE operation
@@ -115,6 +119,9 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $doing_my_query = TRUE;
                 $results        = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
+                if ( !$results ) {
+                    error_log( 'ERROR:ddt_post_query():UPDATE id not known: ' . $last_query );
+                }
             } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
                 # DELETE operation
                 $table = $matches[ 3 ];
@@ -135,6 +142,10 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 # SELECT operation is ignored
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
+            } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
+                # CREATE operation is ignored
+            } else if ( preg_match( '/^\s*drop\s/i', $last_query ) ) {
+                # DROP operation is ignored
             } else {
                 # This case should not happen
                 error_log( 'ERROR:ddt_post_query():unknown MySQL operation: ' . $last_query );
