@@ -54,6 +54,46 @@ function ddt_wp_db_diff_prettify( $content ) {
     return $content;
 }
 
+function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
+    $length = strlen( $buffer );
+    while ( $position < $length && ctype_space( substr( $buffer, $position, 1 ) ) ) {
+        ++$position;
+    }
+    if ( $position === $length ) {
+        return FALSE;
+    }
+    $char = substr( $buffer, $position, 1 );
+    if ( ctype_digit( $char ) ) {
+        $start = $position++;
+        while ( $position < $length && ctype_digit( substr( $buffer, $position, 1 ) ) ) {
+            ++$position;
+        }
+        $end = $position;
+    } else if ( $char === '\'' || $char === '"' ) {
+        $quote = $char;
+        $start = ++$position;
+        while ( TRUE ) {
+            if ( ( $i = strpos( $buffer, $quote, $position ) ) === FALSE ) {
+                $position = $length;
+                return FALSE;
+            }
+            if ( $i + 1 < $length && substr_compare( $buffer, $quote, $i + 1, 1 ) === 0 ) {
+                $position = $i + 2;
+            } else if ( substr_compare( $buffer, '\\', $i - 1, 1 ) === 0 ) {
+                $position = $i + 1;
+            } else {
+                $end = $i;
+                $position = $end + 1;
+                break;
+            }
+        }
+    }
+    if ( $position < $length && substr_compare( $buffer, ',', $position, 1 ) === 0 ) {
+        ++$position;
+    }
+    return substr( $buffer, $start, $end - $start );
+}
+
 function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
     global $wpdb;
     
@@ -104,8 +144,24 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                     $results = mysql_insert_id( $wpdb->dbh );
                 }
                 if ( !$results ) {
-                    error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );
-                    # TODO: handle inserts with specified primary key
+                    # the primary key must have been specified so ...
+                    if ( preg_match ( '#\(\s*((\w+,\s*)*(\w+))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#i', $last_query, $matches ) ) {
+                        error_log( 'ddt_post_query():INSERT:$matches=' . print_r( $matches, true ) );
+                        preg_match_all( '#\w+#', $matches[ 1 ], $fields );
+                        error_log( 'ddt_post_query():INSERT:$fields=' . print_r( $fields, true ) );
+                        if ( ( $index = array_search( $id_for_table[ $table ], $fields[ 0 ] ) ) !== FALSE ) {
+                            error_log( 'ddt_post_query():INSERT:$index=' . $index );
+                            $values = $matches[ 4 ];
+                            $position = 0;
+                            for ( $i = 0; $i <= $index; $i++ ) {
+                                $value = ddt_wp_db_diff_get_next_mysql_token( $values, $position );
+                            }
+                            $results = $value;
+                        }   
+                    }
+                    if ( !$results ) {
+                        error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );
+                    }
                 }
             } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 # UPDATE operation
