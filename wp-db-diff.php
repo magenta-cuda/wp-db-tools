@@ -92,7 +92,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
         $last_query = $wpdb->last_query;
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
             if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
-                error_log( 'insert:$matches=' . print_r( $matches, true ) );
+                # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
@@ -104,7 +104,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                     $results = mysql_insert_id( $wpdb->dbh );
                 }
             } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
-                error_log( 'update:$matches=' . print_r( $matches, true ) );
+                # UPDATE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
@@ -115,9 +115,8 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $doing_my_query = TRUE;
                 $results        = $wpdb->get_col( "SELECT $id FROM $table WHERE $where" );
                 $doing_my_query = FALSE;
-                error_log( 'update:$results=' . print_r( $results, true ) );
             } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
-                error_log( '$delete:matches=' . print_r( $matches, true ) );
+                # DELETE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $tables_orig ) ) {
                     return;
@@ -133,9 +132,12 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                     $results = -1;
                 }
             } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
+                # SELECT operation is ignored
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
+                # SHOW operation is ignored
             } else {
-                error_log( 'ddt_post_query():unmatched: ' . $last_query );
+                # This case should not happen
+                error_log( 'ERROR:ddt_post_query():unknown MySQL operation: ' . $last_query );
             }
             if ( !empty( $table ) && !empty( $results ) && $results !== -1 ) {
                 # omit deletes of rows inserted in this session since the row id is not known
@@ -426,17 +428,5 @@ The columns are sortable and sorting may bring related rows closer together wher
 ddt_wp_db_diff_init( $options, $ddt_add_main_menu );
 
 }   # namespace mc_x_wp_db_tools {
-
-namespace {
-
-if ( function_exists( 'ddt_get_backup_tables' ) ) {
-    error_log( 'ddt_get_backup_tables exists' );
-} else {
-    error_log( 'ddt_get_backup_tables does not exists' );
-}    
-
-//error_log( '$options=' . print_r( $options, true ) );
-
-}   # namespace {
 
 ?>
