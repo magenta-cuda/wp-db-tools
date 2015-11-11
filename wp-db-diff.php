@@ -509,6 +509,17 @@ The columns are sortable and sorting may bring related rows closer together wher
                 }
             }   # while ( TRUE ) {
             echo '</tbody></table>';
+?>
+<div class="ddt_x-fine-print">
+<h3>Technical Details</h3>
+Diff works by spying on database operations using the WordPress filter 'query'. This will intercept all database operations done through the Wordpress API,
+e.g. $wpdb->get_results(), ... update_post_meta() (which will eventually call $wpdb->update() ), ... It will not spy on database operations
+done directly through the PHP MySQL API, e.g. mysqli_query(), mysql_query(), ... Further, it cannot spy on database operations that occur before the
+filter is installed. The filter is installed when the plugin is loaded which is probably early enough for most uses but will not spy on database
+operations done on the load of plugins loaded before this plugin. Some of the more exotic MySQL commands are not currently handled. These will 
+generate an error message like this "ERROR:ddt_post_query():unknown MySQL operation: ..." using the error_log function.
+</div>
+<?php
             die;
         } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
            
