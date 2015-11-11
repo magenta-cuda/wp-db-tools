@@ -187,6 +187,8 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                                 $results = $value;
                             }
                         }   
+                    } else if ( preg_match( '#' . $id_for_table[ $table ] . '\s*(\'|")(\.+?)\1#', $last_query, $matches ) ) {
+                        $results = $matches[ 2 ];
                     }
                     if ( !$results ) {
                         error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );

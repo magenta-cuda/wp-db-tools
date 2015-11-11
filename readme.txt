@@ -17,7 +17,7 @@ Useful for testing when you know only some tables will be changed so you don't h
 Most useful for repeated testing, i.e. backup table(s), test, restore table(s), test, restore table(s), ... test, restore table(s), delete backup.
 
 The diff tool shows the rows in the selected tables that were inserted, updated or deleted.
-For updated rows the columns that have changed values have the values highlighted - green for the original value and red for the new value.
+For updated rows the columns that have changed values have the values highlighted - red for the original value and green for the new value.
 Although large values are truncated in table cells the full value is available by clicking on the table cell.
 Further, serialized values are prettified using JSON.stringify( value, 4 ).
 
