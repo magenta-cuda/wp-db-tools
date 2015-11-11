@@ -187,6 +187,12 @@ EOD;
         }
 ?>
     </fieldset>
+    <fieldset id="ddt_x-important_messages" class="mc_db_tools_pane">
+        <legend>Important</legend>
+It is very important that you select all the tables that may be changed.
+Otherwise when you restore the tables you may be left with an inconsistent database.
+You should always have a real backup just in case you inadvertantly omit a required table.
+    </fieldset>
     </form>
 <?php
         if ( $backup_suffix_ok ) {

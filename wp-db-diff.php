@@ -170,7 +170,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 }
                 if ( !$results ) {
                     # the primary key must have been specified so ...
-                    if ( preg_match ( '#\(\s*((\w+,\s*)*(\w+))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#i', $last_query, $matches ) ) {
+                    if ( preg_match ( '#\(\s*((`?\w+`?,\s*)*(`?\w+`?))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#i', $last_query, $matches ) ) {
                         # parse column names
                         preg_match_all( '#\w+#', $matches[ 1 ], $fields );
                         # find the position of the primary key
