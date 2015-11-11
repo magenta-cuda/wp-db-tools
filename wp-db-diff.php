@@ -208,7 +208,7 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 $doing_my_query = FALSE;
                 if ( !$results ) {
                     # this can occur when the update changes the value of a field in the where clause
-                    error_log( 'WARNING:ddt_post_query():UPDATE id not known: ' . $last_query );
+                    #error_log( 'WARNING:ddt_post_query():UPDATE id not known: ' . $last_query );
                 }
             } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
                 # DELETE operation
@@ -463,7 +463,7 @@ The columns are sortable and sorting may bring related rows closer together wher
                 if ( $operation === 'INSERT' ) {
                     if ( !array_key_exists( $id, $inserts) ) {
                         # this can occur on an insert that gets deleted in the same session
-                        error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad INSERT id \"$id\" for table \"$table\"." );
+                        #error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad INSERT id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_updated">';
@@ -476,7 +476,7 @@ The columns are sortable and sorting may bring related rows closer together wher
                 } else if ( $operation === 'UPDATE' ) {
                     if ( !array_key_exists( $id, $originals ) || !array_key_exists( $id, $updates ) ) {
                         # this can occur on a row that was inserted and updated or a row that was updated and deleted
-                        error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe UPDATE id \"$id\" for table \"$table\"." );
+                        #error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe UPDATE id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_original">';
@@ -498,7 +498,7 @@ The columns are sortable and sorting may bring related rows closer together wher
                 } else if ( $operation === 'DELETE' ) {
                     if ( !array_key_exists( $id, $deletes ) ) {
                         # this can occur on an inserted row
-                        error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad DELETE id \"$id\" for table \"$table\"." );
+                        #error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad DELETE id \"$id\" for table \"$table\"." );
                         continue;
                     }
                     echo '<tr class="ddt_x-changes_original">';

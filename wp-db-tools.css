@@ -37,6 +37,10 @@ fieldset#ddt_x-table_fields table.mc_table_table td.mc_table_td{
     padding:5px 20px;
 }
 
+fieldset#ddt_x-important_messages{
+    border:2px solid red;
+}
+
 div#mc_main_buttons{
     padding:3px 20px;
 }
