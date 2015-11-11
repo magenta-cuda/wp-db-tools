@@ -432,7 +432,7 @@ The columns are sortable and sorting may bring related rows closer together wher
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
-            echo '<table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><th>Row Status</th>';
+            echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 echo '<th>' . $column . '</th>';
             }
@@ -510,7 +510,7 @@ The columns are sortable and sorting may bring related rows closer together wher
                     echo '</tr>';
                 }
             }   # while ( TRUE ) {
-            echo '</tbody></table>';
+            echo '</tbody></table></div>';
 ?>
 <div class="ddt_x-fine-print">
 <h3>Technical Details</h3>

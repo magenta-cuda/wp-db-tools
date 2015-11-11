@@ -79,7 +79,11 @@ div#ddt_x-diff_controls {
 
 div#mc_changes_view{
     width: 100%;
-    overflow-x: auto;
+}
+
+div#ddt_x-table_changes_container {
+    width:100%;
+    overflow-x:auto;
 }
 
 table.ddt_x-table_changes {
