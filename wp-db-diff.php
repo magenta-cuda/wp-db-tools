@@ -334,6 +334,8 @@ No database operations have been done on the selected tables.
                 echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
                 echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';
                 echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
+                echo '<label for="ddt_x-table_sort_order">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sort Order: </label>';
+                echo '<input type="text" id="ddt_x-table_sort_order" placeholder="primary key, secondary keys, ..." value="' . $options[ 'ddt_x-table_sort_order' ] . '" readonly>';
                 echo '</div>';
                 echo '<div id="mc_changes_view"></div>';
 ?>
@@ -526,7 +528,7 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
         } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
            
         add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
-            foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size' ] as $option ) {
+            foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size', 'ddt_x-table_sort_order' ] as $option ) {
                 if ( !empty( $_POST[ $option ] ) ) {
                     $options[ $option ] = $_POST[ $option ];
                 }

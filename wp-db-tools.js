@@ -219,7 +219,18 @@ jQuery( function( ) {
                 jQuery( "div#ddt_x-detail_popup" ).show( );
                 jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
-            table.tablesorter();
+            // TODO: set sort options to value of input#ddt_x-table_sort_order
+            table.tablesorter( );
+            table.find( "th.tablesorter-header" ).mouseup( function( e ) {
+                console.log( this.dataset.column );
+                console.log( jQuery( this ).text( ) );
+                console.log( e.shiftKey );
+                // remember the order of the sort keys
+                var input = jQuery( "input#ddt_x-table_sort_order" );
+                var value = ( e.shiftKey ? input.val( ) + ", " : "" ) + this.dataset.column + "(" + jQuery( this ).text( ) + ")";
+                input.val( value );
+                jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_sort_order": value }, function( r ) { } );
+            } );
             button.disabled = false;
         } );
     } );

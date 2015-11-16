@@ -46,12 +46,13 @@ define( 'MC_FAILURE', 'STATUS:FAILURE' );
 define( 'MC_COLS', 4 );
 
 $options = get_option( 'ddt-x-wp_db_tools', [
-    'ddt_x-version'         => '2.0',
-    'orig_suffix'           => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
-    'ddt_x-orig_suffix'     => '_ddt_x_1113',
-    'ddt_x-enable_diff'     => 'enabled',
-    'ddt_x-table_width'     => '2000px',
-    'ddt_x-table_cell_size' => '200'
+    'ddt_x-version'          => '2.0',
+    'orig_suffix'            => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
+    'ddt_x-orig_suffix'      => '_ddt_x_1113',
+    'ddt_x-enable_diff'      => 'enabled',
+    'ddt_x-table_width'      => '2000px',
+    'ddt_x-table_cell_size'  => '200',
+    'ddt_x-table_sort_order' => ''
 ] );
 
 # N.B. no existing table must have a name ending with suffix $options[ 'ddt_x-orig_suffix' ]'
