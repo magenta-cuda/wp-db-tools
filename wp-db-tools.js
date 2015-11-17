@@ -230,27 +230,36 @@ jQuery( function( ) {
                 console.log( jQuery( this ).text( ) );
                 console.log( e.shiftKey );
                 // remember the order of the sort keys
-                var input = jQuery( "input#ddt_x-table_sort_order" );
-                var value = ( e.shiftKey ? input.val( ) + ", " : "" ) + this.dataset.column + "(" + jQuery( this ).text( ) + ")";
+                var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
+                var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+                var input   = jQuery( "input#ddt_x-table_sort_order" );
+                var value   = ( e.shiftKey ? input.val( ) + ", " : "" ) + this.dataset.column + "(" + jQuery( this ).text( ) + ")";
                 input.val( value );
                 var nonce = jQuery( "input#ddt_x-nonce" ).val( );
-                jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_sort_order": value, 'ddt_x-nonce': nonce }, function( r ) { } );
+                jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_sort_order": value, "ddt_x-table": table, 'ddt_x-nonce': nonce },
+                    function( r ) { } );
             } );
             button.disabled = false;
         } );
     } );
     
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
-        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value, 'ddt_x-nonce': nonce }, function( r ) { } );
+        var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
+        var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+        var nonce   = jQuery( "input#ddt_x-nonce" ).val( );
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value, "ddt_x-table": table, 'ddt_x-nonce': nonce },
+            function( r ) { } );
         var width = this.value;
         width = jQuery.isNumeric( width ) ? width + "px" : width;
         jQuery( "table.ddt_x-table_changes" ).css( "width", width );
     } );
     
     jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
-        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value, 'ddt_x-nonce': nonce }, function( r ) { } );
+        var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
+        var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+        var nonce   = jQuery( "input#ddt_x-nonce" ).val( );
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value, "ddt_x-table": table, 'ddt_x-nonce': nonce },
+            function( r ) { } );
         reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table.ddt_x-table_changes" ) );
     } );
     

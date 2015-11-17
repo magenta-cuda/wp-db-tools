@@ -50,9 +50,9 @@ $options = get_option( 'ddt-x-wp_db_tools', [
     'orig_suffix'            => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
     'ddt_x-orig_suffix'      => '_ddt_x_1113',
     'ddt_x-enable_diff'      => 'enabled',
-    'ddt_x-table_width'      => '2000px',
-    'ddt_x-table_cell_size'  => '200',
-    'ddt_x-table_sort_order' => ''
+    'ddt_x-table_width'      => [ ],
+    'ddt_x-table_cell_size'  => [ ],
+    'ddt_x-table_sort_order' => [ ]
 ] );
 
 # N.B. no existing table must have a name ending with suffix $options[ 'ddt_x-orig_suffix' ]'
@@ -260,7 +260,6 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
     add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included, $ddt_add_main_menu ) {
-        error_log( '$_REQUEST=' . print_r( $_REQUEST, true ) );
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }

@@ -331,11 +331,11 @@ No database operations have been done on the selected tables.
                 echo '<div id="ddt_x-diff_controls">';
                 echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
                 echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width: </label>';
-                echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="' . $options[ 'ddt_x-table_width' ] . '">';
+                echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" value="2500px">';
                 echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';
-                echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
+                echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="200px">';
                 echo '<label for="ddt_x-table_sort_order">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sort Order: </label>';
-                echo '<input type="text" id="ddt_x-table_sort_order" placeholder="primary key, secondary keys, ..." value="' . $options[ 'ddt_x-table_sort_order' ] . '" readonly>';
+                echo '<input type="text" id="ddt_x-table_sort_order" placeholder="primary key, secondary keys, ..." readonly>';
                 echo '<input type="hidden" id="ddt_x-nonce" value="' . wp_create_nonce( 'ddt_x-from_diff' ) . '">';
                 echo '</div>';
                 echo '<div id="mc_changes_view"></div>';
@@ -532,9 +532,13 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
         } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
            
         add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
+            if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
+                wp_nonce_ays( '' );
+            }
+            error_log( '$_POST=' . print_r( $_POST, true ) );
             foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size', 'ddt_x-table_sort_order' ] as $option ) {
                 if ( !empty( $_POST[ $option ] ) ) {
-                    $options[ $option ] = $_POST[ $option ];
+                    $options[ $option ][ $_POST[ 'ddt_x-table' ] ] = $_POST[ $option ];
                 }
             }
             update_option( 'ddt-x-wp_db_tools', $options ); 
