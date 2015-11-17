@@ -21,7 +21,7 @@ jQuery( function( ) {
     } );
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements
-    jQuery( "form#mc_tables" ).submit( function( e ) {
+    jQuery( "form#ddt_x-tables" ).submit( function( e ) {
         console.log( "submit:", e );
         // TODO: e.preventDefault() vs return false;
         //e.preventDefault();
@@ -34,7 +34,7 @@ jQuery( function( ) {
         var button = this;
         jQuery( "#mc_status" ).html( "sending..." );
         // data will contain the names and values of checked HTML input elements of the form with action = 'mc_backup_tables'
-        var data = jQuery( "form#mc_tables" ).serialize();
+        var data = jQuery( "form#ddt_x-tables" ).serialize();
         // invoke the AJAX action wp_ajax_mc_backup_tables
         jQuery.post( ajaxurl, data, function ( response ) {
             jQuery( "#mc_status" ).html( response );
@@ -53,8 +53,9 @@ jQuery( function( ) {
     // Restore from backup
     
     jQuery( "button.mc-wpdbdt-btn#ddt_x-restore" ).click( function( e ) {
+        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery( "#mc_status" ).html( "sending..." );
-        jQuery.post( ajaxurl, { action: "mc_restore_tables" }, function ( response ) {
+        jQuery.post( ajaxurl, { action: "mc_restore_tables", 'ddt_x-nonce': nonce }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
         } );
     } );
@@ -63,8 +64,9 @@ jQuery( function( ) {
     
     jQuery( "button.mc-wpdbdt-btn#ddt_x-delete" ).click( function( e ) {
         var button = this;
+        var nonce  = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery( "#mc_status" ).html( "sending..." );
-        jQuery.post( ajaxurl, { action: "mc_delete_backup" }, function ( response ) {
+        jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': nonce }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
@@ -90,9 +92,10 @@ jQuery( function( ) {
         var table_pane   = jQuery( "fieldset#ddt_x-table_fields" );
         var error_pane   = jQuery( "div#mc_db_tools_error_pane" );
         var main_buttons = jQuery( "div#mc_main_buttons" );
+        var nonce        = jQuery( "input#ddt_x-nonce" ).val( );
         error_pane.text( "checking backup suffix..." ).show( );
         var suffix = this.value;
-        jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix }, function( response ) {
+        jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix, 'ddt_x-nonce': nonce }, function( response ) {
             var result = JSON.parse( response );
             error_pane.text( result.backup_suffix_ok ? "\"" + suffix + "\" accepted as the backup suffix.  Reloading ..."
                 : "Existing table \"" + result.bad_table + "\" already has suffix \"" + suffix + "\", Please try another suffix." );
@@ -163,6 +166,7 @@ jQuery( function( ) {
         var table     = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
         var th        = jQuery( "table#ddt_x-op_counts thead th" );
         var operation = "";
+        var nonce     = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery( checked[0].parentNode.parentNode ).find( "td input[type='checkbox']" ).each( function( i ) {
             if ( this.checked ) {
                 operation += jQuery(th[i]).text( ) +" ";
@@ -173,7 +177,7 @@ jQuery( function( ) {
         }
         operation = operation.trim( ).replace( /\s/g, "," );
         this.disabled = true;
-        jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation }, function( r ) {
+        jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation, 'ddt_x-nonce': nonce }, function( r ) {
             var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table.ddt_x-table_changes" );
             reduceTableCellContents( table );
             var width = jQuery( "input#ddt_x-table_width" ).val( );
@@ -229,21 +233,24 @@ jQuery( function( ) {
                 var input = jQuery( "input#ddt_x-table_sort_order" );
                 var value = ( e.shiftKey ? input.val( ) + ", " : "" ) + this.dataset.column + "(" + jQuery( this ).text( ) + ")";
                 input.val( value );
-                jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_sort_order": value }, function( r ) { } );
+                var nonce = jQuery( "input#ddt_x-nonce" ).val( );
+                jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_sort_order": value, 'ddt_x-nonce': nonce }, function( r ) { } );
             } );
             button.disabled = false;
         } );
     } );
     
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
-        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value }, function( r ) { } );
+        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value, 'ddt_x-nonce': nonce }, function( r ) { } );
         var width = this.value;
         width = jQuery.isNumeric( width ) ? width + "px" : width;
         jQuery( "table.ddt_x-table_changes" ).css( "width", width );
     } );
     
     jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
-        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value }, function( r ) { } );
+        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
+        jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value, 'ddt_x-nonce': nonce }, function( r ) { } );
         reduceTableCellContents( jQuery( "div#mc_changes_view" ).find( "table.ddt_x-table_changes" ) );
     } );
     

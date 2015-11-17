@@ -336,6 +336,7 @@ No database operations have been done on the selected tables.
                 echo '<input type="text" id="ddt_x-table_cell_size" placeholder="truncate content to this" value="' . $options[ 'ddt_x-table_cell_size' ] . '">';
                 echo '<label for="ddt_x-table_sort_order">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Sort Order: </label>';
                 echo '<input type="text" id="ddt_x-table_sort_order" placeholder="primary key, secondary keys, ..." value="' . $options[ 'ddt_x-table_sort_order' ] . '" readonly>';
+                echo '<input type="hidden" id="ddt_x-nonce" value="' . wp_create_nonce( 'ddt_x-from_diff' ) . '">';
                 echo '</div>';
                 echo '<div id="mc_changes_view"></div>';
 ?>
@@ -366,6 +367,9 @@ No database operations have been done on the selected tables.
 
         add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
             global $wpdb;
+            if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
+                wp_nonce_ays( '' );
+            }
             $suffix    = $options[ 'ddt_x-orig_suffix' ];
             $table     = $_POST[ 'table' ];
             $table_id  = $id_for_table[ $table ];

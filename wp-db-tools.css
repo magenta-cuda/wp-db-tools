@@ -21,7 +21,7 @@ div.ddt_x-fine-print h3 {
     margin: 0px 0px 5px 0px;
 }
 
-div.mc_container{
+div.ddt_x-container{
     padding:10px 20px;
 }
 
@@ -33,7 +33,7 @@ div.mc_db_tools_pane#mc_db_tools_error_pane{
     border:2px solid red;
 }
 
-fieldset#ddt_x-table_fields table.mc_table_table td.mc_table_td{
+fieldset#ddt_x-table_fields table.ddt_x-table_table td.mc_table_td{
     padding:5px 20px;
 }
 

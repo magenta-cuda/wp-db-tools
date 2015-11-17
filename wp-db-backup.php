@@ -115,12 +115,12 @@ $ddt_add_main_menu = function ( ) use ( $options ) {
         $backup_tables    = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
         $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
 ?>
-<div class="mc_container">
-    <form id="mc_tables">
+<div class="ddt_x-container">
+    <form id="ddt_x-tables">
     <fieldset id="ddt_x-table_fields" class="mc_db_tools_pane"
         <?php echo $backup_tables ? ' disabled' : ''; echo $backup_suffix_ok ? '' : ' style="display:none;"'; ?>>
         <legend>WordPress Tables for Backup</legend>
-        <table class="mc_table_table">
+        <table class="ddt_x-table_table">
 <?php
         # create a HTML input element embedded in a HTML td element for each database table
         $mc_backup = MC_BACKUP;
@@ -184,6 +184,7 @@ EOD;
         <label for="ddt_x-enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff: </label>
         <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled"
             <?php if ( !empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' checked'; } ?><?php if ( $backup_tables ) { echo ' disabled'; } ?>>
+        <input type="hidden" name="ddt_x-nonce" id="ddt_x-nonce" value="<?php echo wp_create_nonce( 'ddt_x-from_backup' ); ?>">
 <?php
         }
 ?>
@@ -259,8 +260,11 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
     add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included, $ddt_add_main_menu ) {
+        error_log( '$_REQUEST=' . print_r( $_REQUEST, true ) );
+        if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
+            wp_nonce_ays( '' );
+        }
         $action = 'backup tables';
-        
         if ( !empty( $_POST[ 'ddt_x-enable_diff' ] ) ) {
             $options[ 'ddt_x-enable_diff' ] = 'enabled';
             if ( !$wp_db_diff_included ) {
@@ -308,6 +312,9 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
     
     add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $options, $wp_db_diff_included ) {
+        if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
+            wp_nonce_ays( '' );
+        }
         $action      = 'restore tables';
         # get names of tables that have a backup copy
         $tables      = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
@@ -347,6 +354,9 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
     
     add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $options, $wp_db_diff_included ) {
+        if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
+            wp_nonce_ays( '' );
+        }
         $action   = 'delete tables';
         $suffix   = $options[ 'orig_suffix' ];
         $tables   = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
@@ -374,6 +384,9 @@ if ( defined( 'DOING_AJAX' ) ) {
     } );   # add_action( 'wp_ajax_mc_delete_backup', function( ) {
         
     add_action( 'wp_ajax_mc_check_backup_suffix', function( ) use ( $options ) {
+        if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
+            wp_nonce_ays( '' );
+        }
         $suffix = $_POST[ 'backup_suffix' ];
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
             $options[ 'ddt_x-orig_suffix' ] = $options[ 'orig_suffix' ] = $suffix;
