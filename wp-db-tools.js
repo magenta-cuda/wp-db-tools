@@ -179,6 +179,15 @@ jQuery( function( ) {
         this.disabled = true;
         jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation, 'ddt_x-nonce': nonce }, function( r ) {
             var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table.ddt_x-table_changes" );
+            if ( ems_xii_diff_options.width      ) {
+                jQuery( "input#ddt_x-table_width"      ).val( ems_xii_diff_options.width      );
+            }
+            if ( ems_xii_diff_options.cell_size  ) {
+                jQuery( "input#ddt_x-table_cell_size"  ).val( ems_xii_diff_options.cell_size  );
+            }
+            if ( ems_xii_diff_options.sort_order ) {
+                jQuery( "input#ddt_x-table_sort_order" ).val( ems_xii_diff_options.sort_order );
+            }
             reduceTableCellContents( table );
             var width = jQuery( "input#ddt_x-table_width" ).val( );
             width = jQuery.isNumeric( width ) ? width + "px" : width;

@@ -1,0 +1,198 @@
+div {
+  &.ddt_x-error_message {
+    border: 2px solid red;
+    padding: 10px 25px;
+    margin: 20px;
+  }
+
+  &.ddt_x-info_message {
+    border: 2px solid gray;
+    padding: 10px 25px;
+    margin: 20px;
+  }
+
+  &.ddt_x-fine-print {
+    border: 2px solid gray;
+    padding: 10px 25px;
+    margin: 100px 20px 20px 20px;
+    font-size: x-small;
+
+    h3 {
+      margin: 0px 0px 5px 0px;
+    }
+  }
+
+  &.ddt_x-container {
+    padding: 10px 20px;
+  }
+}
+
+fieldset.mc_db_tools_pane {
+  border: 2px solid black;
+  margin: 20px;
+  padding: 20px;
+}
+
+div.mc_db_tools_pane {
+  border: 2px solid black;
+  margin: 20px;
+  padding: 20px;
+
+  &#mc_db_tools_error_pane {
+    border: 2px solid red;
+  }
+}
+
+fieldset {
+  &#ddt_x-table_fields table.ddt_x-table_table td.mc_table_td {
+    padding: 5px 20px;
+  }
+
+  &#ddt_x-important_messages {
+    border: 2px solid red;
+  }
+}
+
+div#mc_main_buttons {
+  padding: 3px 20px;
+}
+
+button.mc-wpdbdt-btn {
+  border: 2px solid gray;
+  border-radius: 7px;
+  padding: 5px 10px;
+  margin: 0px;
+}
+
+table#ddt_x-op_counts {
+  border-collapse: collapse;
+  margin: 20px;
+  border: 2px solid black;
+  background-color: #CCC;
+
+  th, td {
+    border: 2px solid black;
+    background-color: #CCC;
+  }
+
+  th {
+    padding: 5px 25px 5px 5px;
+    text-align: right;
+  }
+
+  td {
+    padding: 5px 5px 5px 25px;
+    text-align: right;
+  }
+
+  input {
+    margin-left: 5px;
+    margin-right: 0px;
+  }
+}
+
+div {
+  &#ddt_x-diff_controls {
+    padding: 3px 20px;
+  }
+
+  &#mc_changes_view {
+    width: 100%;
+  }
+
+  &#ddt_x-table_changes_container {
+    width: 100%;
+    overflow-x: auto;
+  }
+}
+
+table {
+  &.ddt_x-table_changes {
+    border: 2px solid black;
+    border-collapse: collapse;
+    margin: 20px;
+    width: 100%;
+  }
+
+  &.mc_table_changes {
+    th, td {
+      border: 2px solid black;
+      padding: 5px;
+      background-color: #CCC;
+    }
+
+    th {
+      background-color: rgb(128, 128, 128);
+      background-image: url(data:image/gif;base64,R0lGODlhFQAJAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAkAAAIXjI+AywnaYnhUMoqt3gZXPmVg94yJVQAAOw==);
+      background-position: 100% 50%;
+      background-repeat: no-repeat;
+      color: black;
+      text-align: center;
+    }
+  }
+
+  &.ddt_x-table_changes tr {
+    &.ddt_x-changes_original td {
+      background-color: #FFECEC;
+    }
+
+    &.ddt_x-changes_updated td {
+      background-color: #EAFFEA;
+    }
+
+    &.ddt_x-changes_original td.ddt_x-field_changed {
+      background-color: #F8CBCB;
+    }
+
+    &.ddt_x-changes_updated td.ddt_x-field_changed {
+      background-color: #A6F3A6;
+    }
+  }
+}
+
+div {
+  &#ddt_x-popup-margin {
+    box-sizing: border-box;
+    position: fixed;
+    left: 0px;
+    top: 0px;
+    z-index: 100000;
+    background-color: black;
+    opacity: 0.9;
+    width: 100%;
+    height: 100%;
+    display: none;
+  }
+
+  &#ddt_x-detail_popup {
+    box-sizing: border-box;
+    position: fixed;
+    left: 3%;
+    top: 5%;
+    z-index: 100001;
+    border: 2px solid black;
+    border-radius: 7px;
+    background-color: white;
+    width: 94%;
+    height: 90%;
+    overflow: auto;
+    display: none;
+
+    button#ddt_x-close_detail_popup {
+      float: right;
+      border: 1px solid gray;
+      border-radius: 4px;
+      margin: 10px;
+    }
+  }
+
+  &.ddt_x-detail_content {
+    box-sizing: border-box;
+    padding: 10px;
+
+    &.ddt_x-detail_content_other {
+      width: 47%;
+      display: none;
+    }
+  }
+}

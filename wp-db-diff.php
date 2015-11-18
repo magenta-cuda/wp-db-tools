@@ -370,25 +370,29 @@ No database operations have been done on the selected tables.
             if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
                 wp_nonce_ays( '' );
             }
-            $suffix    = $options[ 'ddt_x-orig_suffix' ];
-            $table     = $_POST[ 'table' ];
-            $table_id  = $id_for_table[ $table ];
-            $operation = explode( ',', $_POST[ 'operation' ] );
+            $suffix     = $options[ 'ddt_x-orig_suffix' ];
+            $table      = $_POST[ 'table' ];
+            $table_id   = $id_for_table[ $table ];
+            $operation  = explode( ',', $_POST[ 'operation' ] );
             # replace pretty header labels for operation with the operation tag
-            $operation = str_replace( 'Inserts', 'INSERT', $operation );
-            $operation = str_replace( 'Updates', 'UPDATE', $operation );
-            $operation = str_replace( 'Deletes', 'DELETE', $operation );
+            $operation  = str_replace( 'Inserts', 'INSERT', $operation );
+            $operation  = str_replace( 'Updates', 'UPDATE', $operation );
+            $operation  = str_replace( 'Deletes', 'DELETE', $operation );
             # remove any invalid operation tags
-            $operation = array_filter( $operation, function( $v ) {
+            $operation  = array_filter( $operation, function( $v ) {
                 return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE' ] );
             } );
-            $results   = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
-                             . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
-                             . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
+            $width      = !empty( $options[ 'ddt_x-table_width'      ][ $table ] ) ? $options[ 'ddt_x-table_width'      ][ $table ] : '';
+            $cell_size  = !empty( $options[ 'ddt_x-table_cell_size'  ][ $table ] ) ? $options[ 'ddt_x-table_cell_size'  ][ $table ] : '';
+            $sort_order = !empty( $options[ 'ddt_x-table_sort_order' ][ $table ] ) ? $options[ 'ddt_x-table_sort_order' ][ $table ] : '';
+            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
+                              . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
+                              . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
 ?>
 <div class="ddt_x-info_message">
-Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.<br>
+Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.
 The columns are sortable and sorting may bring related rows closer together where they may be easier to compare.
+You can do a multi-column sort by pressing the shift-key when clicking on the secondary columns.
 </div>
 <?php
             $ids             = [ ];
@@ -518,6 +522,9 @@ The columns are sortable and sorting may bring related rows closer together wher
             }   # while ( TRUE ) {
             echo '</tbody></table></div>';
 ?>
+<script type="text/javascript">
+    var ems_xii_diff_options = { width: "<?php echo $width; ?>", cell_size: "<?php echo $cell_size; ?>", sort_order: "<?php echo $sort_order; ?>" };
+</script>
 <div class="ddt_x-fine-print">
 <h3>Technical Details</h3>
 Diff works by spying on database operations using the WordPress filter 'query'. This will intercept all database operations done through the Wordpress API,
@@ -535,7 +542,6 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
             if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
                 wp_nonce_ays( '' );
             }
-            error_log( '$_POST=' . print_r( $_POST, true ) );
             foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size', 'ddt_x-table_sort_order' ] as $option ) {
                 if ( !empty( $_POST[ $option ] ) ) {
                     $options[ $option ][ $_POST[ 'ddt_x-table' ] ] = $_POST[ $option ];
