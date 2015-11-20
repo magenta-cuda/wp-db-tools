@@ -152,9 +152,10 @@ jQuery( function( ) {
         jQuery( "button#ddt_x-diff_view_changes" ).prop( "disabled", jQuery( "table#ddt_x-op_counts input[type='checkbox']:checked" ).length === 0 );
     } );
     
-    function prettifyTableCellContent( content ) {
+    function prettifyTableCellContent( content, returns ) {
         try {
-            return "<pre>" + JSON.stringify( JSON.parse( content ), null, 4 ) +"</pre>";
+            returns.object = JSON.parse( content );
+            return "<pre>" + JSON.stringify( returns.object, null, 4 ) +"</pre>";
         } catch ( e ) {
             return content;
         }
@@ -209,13 +210,73 @@ jQuery( function( ) {
                         that = nextTr.find( "td" )[ index ];
                     }
                 }
-                var main = jQuery( "div#ddt_x-detail_content" )
-                    .html( prettifyTableCellContent( this.dataset.origContent ? this.dataset.origContent : this.textContent ) )
-                    .css( "background-color", jQuery( this ).css( "background-color" ) );
-                var other = jQuery( "div#ddt_x-detail_content_other" );
+                var main       = jQuery( "div#ddt_x-detail_content" );
+                var mainObject = { };
+                var mainHtml   = prettifyTableCellContent( this.dataset.origContent ? this.dataset.origContent : this.textContent, mainObject );
+                mainObject     = mainObject.object;
+                var other      = jQuery( "div#ddt_x-detail_content_other" );
                 if ( that ) {
-                    other.html( prettifyTableCellContent( that.dataset.origContent ? that.dataset.origContent : that.textContent ) )
-                        .css( "background-color", jQuery( that ).css( "background-color" ) );
+                    var otherObject = { };
+                    var otherHtml   = prettifyTableCellContent( that.dataset.origContent ? that.dataset.origContent : that.textContent, otherObject );
+                    otherObject     = otherObject.object;
+                    if ( typeof mainObject === "object" && typeof otherObject === "object" ) {
+                        var mainCssClass  = updated ? "ddt_x-update_changed" : "ddt_x-original_changed";
+                        var otherCssClass = updated ? "ddt_x-original_changed" : "ddt_x-update_changed";
+                        var mainIsArray   = Array.isArray( mainObject  );
+                        var otherIsArray  = Array.isArray( otherObject );
+                        if ( mainIsArray && otherIsArray || !mainIsArray && !otherIsArray ) {
+                            var mainKeys  = Object.keys( mainObject  );
+                            var otherKeys = Object.keys( otherObject );
+                            var keys      = mainKeys.slice( );
+                            otherKeys.forEach( function( key ) {
+                                if ( keys.indexOf( key ) === -1 ) {
+                                    keys.push( key );
+                                }
+                            } );
+                            if ( mainIsArray ) {
+                                otherHtml = mainHtml = '';
+                            }
+                            keys.forEach( function( key ) {
+                                var i = mainKeys .indexOf( key );
+                                var j = otherKeys.indexOf( key );
+                                if ( mainIsArray ) {
+                                    var mainItemHtml  = i !== -1 ? JSON.stringify( mainObject [ key ] ) : '';
+                                    var otherItemHtml = j !== -1 ? JSON.stringify( otherObject[ key ] ) : '';
+                                } else {
+                                    var regEx         = new RegExp( key );
+                                }
+                                if ( i !== -1 && j !== -1 ) {
+                                    if ( JSON.stringify( mainObject[ key ] ) !== JSON.stringify( otherObject[ key ] ) ) {
+                                        if ( mainIsArray ) {
+                                            mainHtml  += '<span class="' + mainCssClass   + '">' + mainItemHtml  + '</span>' + ',';
+                                            otherHtml += '<span class="' + otherCssClass  + '">' + otherItemHtml + '</span>' + ',';
+                                        } else {
+                                            mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">key</span>' );
+                                            otherHtml.replace( regEx, '<span class="' + otherCssClass + '">key</span>' );
+                                        }
+                                    } else {
+                                        if ( mainIsArray ) {
+                                            mainHtml  += mainItemHtml  + ',';
+                                            otherHtml += otherItemHtml + ',';
+                                        }
+                                    }
+                                } else if ( i !== -1 ) {
+                                    if ( mainIsArray ) {
+                                        mainHtml  += '<span class="' + mainCssClass    + '">' + mainItemHtml  + '</span>' + ',';
+                                    } else {
+                                        mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">key</span>' );
+                                    }
+                                } else {
+                                    if ( mainIsArray ) {
+                                        otherHtml += '<span class="' + otherCssClass   + '">' + otherItemHtml + '</span>' + ',';
+                                    } else {
+                                        otherHtml.replace( regEx, '<span class="' + otherCssClass + '">key</span>' );
+                                    }
+                                }
+                            } );
+                        }
+                    }
+                    other.html( otherHtml ).css( "background-color", jQuery( that.parentNode ).css( "background-color" ) );
                     main.css( "width", "47%" );
                     if ( updated ) {
                         main.css(  { float: "right", margin: "auto 2% auto 1%" } );
@@ -229,6 +290,7 @@ jQuery( function( ) {
                     main.css( { width: "96%", float: "none", margin: "auto" } );
                     other.hide( );
                 }
+                main.html ( mainHtml  ).css( "background-color", jQuery( this.parentNode ).css( "background-color" ) );
                 jQuery( "div#ddt_x-detail_popup" ).show( );
                 jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
