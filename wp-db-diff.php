@@ -543,7 +543,7 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
                 wp_nonce_ays( '' );
             }
             foreach( [ 'ddt_x-table_width', 'ddt_x-table_cell_size', 'ddt_x-table_sort_order' ] as $option ) {
-                if ( !empty( $_POST[ $option ] ) ) {
+                if ( !empty( $_POST[ $option ] ) && !empty( $_POST[ $option] ) ) {
                     $options[ $option ][ $_POST[ 'ddt_x-table' ] ] = $_POST[ $option ];
                 }
             }

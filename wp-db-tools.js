@@ -157,6 +157,11 @@ jQuery( function( ) {
             returns.object = JSON.parse( content );
             return "<pre>" + JSON.stringify( returns.object, null, 4 ) +"</pre>";
         } catch ( e ) {
+            if ( e.message.indexOf( "bad escaped character" ) !== -1 ) {
+                console.log( e );
+                jQuery( "div.ddt_x-info_message" ).append( '<span class="ddt_x-error">' + e.toString( )
+                    + ' [This means the serialized value of a database field could not be parsed.]</span>' );
+            }
             return content;
         }
     }
@@ -317,6 +322,9 @@ jQuery( function( ) {
     jQuery( "input#ddt_x-table_width" ).change( function( e ) {
         var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
         var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+        if ( !table ) {
+            return;
+        }
         var nonce   = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_width": this.value, "ddt_x-table": table, 'ddt_x-nonce': nonce },
             function( r ) { } );
@@ -328,6 +336,9 @@ jQuery( function( ) {
     jQuery( "input#ddt_x-table_cell_size" ).change( function( e ) {
         var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
         var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
+        if ( !table ) {
+            return;
+        }
         var nonce   = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery.post( ajaxurl, { action: "ddt_x-update_diff_options", "ddt_x-table_cell_size": this.value, "ddt_x-table": table, 'ddt_x-nonce': nonce },
             function( r ) { } );

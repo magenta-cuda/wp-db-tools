@@ -121,10 +121,6 @@ table {
     }
     
     th {
-      background-color: #CCC;
-    }
-
-    th {
       background-color: rgb(128, 128, 128);
       background-image: url(data:image/gif;base64,R0lGODlhFQAJAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAkAAAIXjI+AywnaYnhUMoqt3gZXPmVg94yJVQAAOw==);
       background-position: 100% 50%;
@@ -207,4 +203,8 @@ div {
       background-color: #A6F3A6;
     }
   }
+}
+
+span.ddt_x-error {
+    color: red;
 }

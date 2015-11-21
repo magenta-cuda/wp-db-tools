@@ -77,8 +77,6 @@ table.mc_table_changes th, table.mc_table_changes td {
   border: 2px solid black;
   padding: 5px; }
 table.mc_table_changes th {
-  background-color: #CCC; }
-table.mc_table_changes th {
   background-color: gray;
   background-image: url(data:image/gif;base64,R0lGODlhFQAJAIAAACMtMP///yH5BAEAAAEALAAAAAAVAAkAAAIXjI+AywnaYnhUMoqt3gZXPmVg94yJVQAAOw==);
   background-position: 100% 50%;
@@ -133,5 +131,8 @@ div.ddt_x-detail_content {
     background-color: #F8CBCB; }
   div.ddt_x-detail_content span.ddt_x-update_changed {
     background-color: #A6F3A6; }
+
+span.ddt_x-error {
+  color: red; }
 
 /*# sourceMappingURL=wp-db-tools.css.map */
