@@ -192,7 +192,14 @@ jQuery( function( ) {
                 jQuery( "input#ddt_x-table_cell_size"  ).val( ems_xii_diff_options.cell_size  );
             }
             if ( ems_xii_diff_options.sort_order ) {
+                var sortList = [ ];
                 jQuery( "input#ddt_x-table_sort_order" ).val( ems_xii_diff_options.sort_order );
+                var regEx   = /(^|,\s)(\d+)\(\w+\)/g;
+                var matches;
+                while ( (matches = regEx.exec( ems_xii_diff_options.sort_order ) ) !== null ) {
+                    console.log( "matches=", matches );
+                    sortList.push( [ matches[ 2 ], 0 ] );
+                }
             }
             reduceTableCellContents( table );
             var width = jQuery( "input#ddt_x-table_width" ).val( );
@@ -300,7 +307,11 @@ jQuery( function( ) {
                 jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
             // TODO: set sort options to value of input#ddt_x-table_sort_order
-            table.tablesorter( );
+            var sorterOptions = { };
+            if ( sortList ) {
+                sorterOptions.sortList = sortList;
+            }
+            table.tablesorter( sorterOptions );
             table.find( "th.tablesorter-header" ).mouseup( function( e ) {
                 console.log( this.dataset.column );
                 console.log( jQuery( this ).text( ) );
