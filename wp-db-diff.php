@@ -394,6 +394,9 @@ Table cells with content ending in &quot;...&quot; have been truncated. You can 
 The columns are sortable and sorting may bring related rows closer together where they may be easier to compare.
 You can do a multi-column sort by pressing the shift-key when clicking on the secondary columns.
 </div>
+<script type="text/javascript">
+    var ems_xii_diff_options = { width: "<?php echo $width; ?>", cell_size: "<?php echo $cell_size; ?>", sort_order: "<?php echo $sort_order; ?>" };
+</script>
 <?php
             $ids             = [ ];
             $ids[ 'INSERT' ] = [ ];
@@ -522,9 +525,6 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             }   # while ( TRUE ) {
             echo '</tbody></table></div>';
 ?>
-<script type="text/javascript">
-    var ems_xii_diff_options = { width: "<?php echo $width; ?>", cell_size: "<?php echo $cell_size; ?>", sort_order: "<?php echo $sort_order; ?>" };
-</script>
 <div class="ddt_x-fine-print">
 <h3>Technical Details</h3>
 Diff works by spying on database operations using the WordPress filter 'query'. This will intercept all database operations done through the Wordpress API,

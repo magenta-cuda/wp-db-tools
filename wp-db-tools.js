@@ -251,8 +251,8 @@ jQuery( function( ) {
                                             mainHtml  += '<span class="' + mainCssClass   + '">' + mainItemHtml  + '</span>' + ',';
                                             otherHtml += '<span class="' + otherCssClass  + '">' + otherItemHtml + '</span>' + ',';
                                         } else {
-                                            mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">key</span>' );
-                                            otherHtml.replace( regEx, '<span class="' + otherCssClass + '">key</span>' );
+                                            mainHtml  = mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">$&</span>' );
+                                            otherHtml = otherHtml.replace( regEx, '<span class="' + otherCssClass + '">$&</span>' );
                                         }
                                     } else {
                                         if ( mainIsArray ) {
@@ -264,13 +264,13 @@ jQuery( function( ) {
                                     if ( mainIsArray ) {
                                         mainHtml  += '<span class="' + mainCssClass    + '">' + mainItemHtml  + '</span>' + ',';
                                     } else {
-                                        mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">key</span>' );
+                                        mainHtml  = mainHtml .replace( regEx, '<span class="' + mainCssClass  + '">$&</span>' );
                                     }
                                 } else {
                                     if ( mainIsArray ) {
                                         otherHtml += '<span class="' + otherCssClass   + '">' + otherItemHtml + '</span>' + ',';
                                     } else {
-                                        otherHtml.replace( regEx, '<span class="' + otherCssClass + '">key</span>' );
+                                        otherHtml = otherHtml.replace( regEx, '<span class="' + otherCssClass + '">$&</span>' );
                                     }
                                 }
                             } );
