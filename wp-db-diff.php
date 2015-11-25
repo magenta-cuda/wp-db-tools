@@ -55,7 +55,7 @@ function ddt_wp_db_diff_end_session( ) {
 
 function ddt_wp_db_diff_prettify( $content ) {
     if ( is_serialized( $content ) ) {
-        return json_encode( unserialize( $content ) );
+        return json_encode( unserialize( $content ), JSON_HEX_TAG | JSON_FORCE_OBJECT );
     }
     return $content;
 }
@@ -445,11 +445,11 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
-            echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><th>Row Status</th>';
+            echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><tr><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 echo '<th>' . $column . '</th>';
             }
-            echo '</thead><tbody>';
+            echo "</tr></thead>\n<tbody>";
             $insert_ids = $ids[ 'INSERT' ];
             $update_ids = $ids[ 'UPDATE' ];
             $delete_ids = $ids[ 'DELETE' ];
@@ -485,7 +485,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $insert->$column ) . '</td>';
                     }
-                    echo '</tr>';
+                    echo "</tr>\n";
                 } else if ( $operation === 'UPDATE' ) {
                     if ( !array_key_exists( $id, $originals ) || !array_key_exists( $id, $updates ) ) {
                         # this can occur on a row that was inserted and updated or a row that was updated and deleted
@@ -507,7 +507,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $update->$column ) . '</td>';
                     }
-                    echo '</tr>';
+                    echo "</tr>\n";
                 } else if ( $operation === 'DELETE' ) {
                     if ( !array_key_exists( $id, $deletes ) ) {
                         # this can occur on an inserted row
@@ -520,7 +520,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     foreach ( $columns as $column ) {
                         echo '<td class="ddt_x-field_changed">' . ddt_wp_db_diff_prettify( $delete->$column ) . '</td>';
                     }
-                    echo '</tr>';
+                    echo "</tr>\n";
                 }
             }   # while ( TRUE ) {
             echo '</tbody></table></div>';
