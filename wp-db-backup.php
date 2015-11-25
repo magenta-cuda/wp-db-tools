@@ -54,7 +54,7 @@ $options = get_option( 'ddt-x-wp_db_tools', [
     'ddt_x-enable_diff'      => 'enabled',
     'ddt_x-table_width'      => [ ],
     'ddt_x-table_cell_size'  => [ ],
-    'ddt_x-table_sort_order' => [ $wpdb->postmeta => '2(post_id), 3(meta_key)' ]
+    'ddt_x-table_sort_order' => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
 ] );
 
 # N.B. no existing table must have a name ending with suffix $options[ 'ddt_x-orig_suffix' ]'

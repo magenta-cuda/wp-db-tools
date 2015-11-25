@@ -251,7 +251,7 @@ jQuery( function( ) {
                                     var mainItemHtml  = i !== -1 ? JSON.stringify( mainObject [ key ] ) : '';
                                     var otherItemHtml = j !== -1 ? JSON.stringify( otherObject[ key ] ) : '';
                                 } else {
-                                    var regEx         = new RegExp( key );
+                                    var regEx         = new RegExp( '"' + key + '":' );
                                 }
                                 if ( i !== -1 && j !== -1 ) {
                                     if ( JSON.stringify( mainObject[ key ] ) !== JSON.stringify( otherObject[ key ] ) ) {
