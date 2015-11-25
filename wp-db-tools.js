@@ -32,7 +32,7 @@ jQuery( function( ) {
     
     jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
         var button = this;
-        jQuery( "#mc_status" ).html( "sending..." );
+        jQuery( "#mc_status" ).html( "working..." );
         // data will contain the names and values of checked HTML input elements of the form with action = 'mc_backup_tables'
         var data = jQuery( "form#ddt_x-tables" ).serialize();
         // invoke the AJAX action wp_ajax_mc_backup_tables
@@ -54,7 +54,7 @@ jQuery( function( ) {
     
     jQuery( "button.mc-wpdbdt-btn#ddt_x-restore" ).click( function( e ) {
         var nonce = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery( "#mc_status" ).html( "sending..." );
+        jQuery( "#mc_status" ).html( "working..." );
         jQuery.post( ajaxurl, { action: "mc_restore_tables", 'ddt_x-nonce': nonce }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
         } );
@@ -65,7 +65,7 @@ jQuery( function( ) {
     jQuery( "button.mc-wpdbdt-btn#ddt_x-delete" ).click( function( e ) {
         var button = this;
         var nonce  = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery( "#mc_status" ).html( "sending..." );
+        jQuery( "#mc_status" ).html( "working..." );
         jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': nonce }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {

@@ -20,6 +20,8 @@ The diff tool shows the rows in the selected tables that were inserted, updated 
 For updated rows the columns that have changed values have the values highlighted - red for the original value and green for the new value.
 Although large values are truncated in table cells the full value is available by clicking on the table cell.
 Further, serialized values are prettified using JSON.stringify( value, 4 ).
+The diff tool is intended for viewing the effect on the database tables of a small number of WordPress operations,
+i.e. it is not suitable for testing a large number of WordPress operations.
 
 Please visit [https://wpdbdt.wordpress.com/](https://wpdbdt.wordpress.com/) for a very quick introduction.
 
@@ -44,6 +46,7 @@ No, the backup is done by creating additional tables in the same database so if 
 == Changelog ==
 = 2.0.1 =
 * Remember the table size, cell size and sort order for each table for the next session
+* Highlight the changed fields in serialized values
 = 2.0.0.1 =
 * Fix readme tags
 = 2.0 =
@@ -53,7 +56,8 @@ No, the backup is done by creating additional tables in the same database so if 
   
 == Upgrade Notice ==
 = 2.0.1 =
-* Remember the table size, cell size and sort order for each table for the next session
+* Remember the table size, cell size and sort order for each table for the next session 
+* Highlight the changed fields in serialized values
 = 2.0.0.1 =
 * Fix readme tags
 = 2.0 =
