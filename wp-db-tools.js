@@ -185,15 +185,11 @@ jQuery( function( ) {
         this.disabled = true;
         jQuery.post( ajaxurl, { action: "ddt_x-diff_view_changes", table: table, operation: operation, 'ddt_x-nonce': nonce }, function( r ) {
             var table = jQuery( "div#mc_changes_view" ).html( r ).find( "table.ddt_x-table_changes" );
-            if ( ems_xii_diff_options.width      ) {
-                jQuery( "input#ddt_x-table_width"      ).val( ems_xii_diff_options.width      );
-            }
-            if ( ems_xii_diff_options.cell_size  ) {
-                jQuery( "input#ddt_x-table_cell_size"  ).val( ems_xii_diff_options.cell_size  );
-            }
+            jQuery( "input#ddt_x-table_width"      ).val( ems_xii_diff_options.width      ? ems_xii_diff_options.width      : "1000px" );
+            jQuery( "input#ddt_x-table_cell_size"  ).val( ems_xii_diff_options.cell_size  ? ems_xii_diff_options.cell_size  : "50" );
+            jQuery( "input#ddt_x-table_sort_order" ).val( ems_xii_diff_options.sort_order ? ems_xii_diff_options.sort_order : ""    );
             if ( ems_xii_diff_options.sort_order ) {
                 var sortList = [ ];
-                jQuery( "input#ddt_x-table_sort_order" ).val( ems_xii_diff_options.sort_order );
                 var regEx   = /(^|,\s)(\d+)\(\w+\)/g;
                 var matches;
                 while ( (matches = regEx.exec( ems_xii_diff_options.sort_order ) ) !== null ) {
@@ -306,7 +302,6 @@ jQuery( function( ) {
                 jQuery( "div#ddt_x-detail_popup" ).show( );
                 jQuery( "div#ddt_x-popup-margin" ).show( );
             } );
-            // TODO: set sort options to value of input#ddt_x-table_sort_order
             var sorterOptions = { };
             if ( sortList ) {
                 sorterOptions.sortList = sortList;
