@@ -6,11 +6,11 @@ jQuery( function( ) {
         }
         var cellContentMaxLength = jQuery( "input#ddt_x-table_cell_size" ).val( );
         table.find( "td" ).each( function( ) {
-            var text = this.dataset.origContent ? this.dataset.origContent : this.textContent;
-            if ( text.length > cellContentMaxLength ) {
-                this.dataset.origContent = text;
-                this.textContent = text.substr( 0, cellContentMaxLength ) + " ...";
+            if ( typeof this.dataset.origContent === "undefined" ) {
+                this.dataset.origContent = this.textContent;
             }
+            var text = this.dataset.origContent;
+            this.textContent = text.length > cellContentMaxLength ? text.substr( 0, cellContentMaxLength ) + " ..." : text;
         } );
     }
 
@@ -327,6 +327,8 @@ jQuery( function( ) {
                     function( r ) { } );
             } );
             button.disabled = false;
+            jQuery( "input#ddt_x-table_width"       ).prop( "disabled", false );
+            jQuery( "input#ddt_x-table_cell_size"   ).prop( "disabled", false );
         } );
     } );
     
