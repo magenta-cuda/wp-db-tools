@@ -162,7 +162,7 @@ jQuery( function( ) {
                 jQuery( "div.ddt_x-info_message" ).append( '<span class="ddt_x-error">' + e.toString( )
                     + ' [This means the serialized value of a database field could not be parsed.]</span>' );
             }
-            return content;
+            return jQuery( "<div />" ).text( content ).html( );
         }
     }
     

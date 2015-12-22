@@ -57,7 +57,7 @@ function ddt_wp_db_diff_prettify( $content ) {
     if ( is_serialized( $content ) ) {
         return json_encode( unserialize( $content ), JSON_HEX_TAG | JSON_FORCE_OBJECT );
     }
-    return $content;
+    return htmlspecialchars( $content );
 }
 
 function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
