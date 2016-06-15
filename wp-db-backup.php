@@ -230,7 +230,7 @@ You should always have a real backup just in case you inadvertantly omit a requi
 }   # function ddt_add_main_menu( ) {
         
 add_action( 'admin_menu', function( ) {
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, 'ddt_add_main_menu' );
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
 } );   # add_action( 'admin_menu', function( ) {
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {
@@ -240,13 +240,13 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     }
 } );
     
-ddt_wp_db_diff_included( $i = NULL ) {
+function ddt_wp_db_diff_included( $i = NULL ) {
     static $wp_db_diff_included = NULL;
     if ( $i !== NULL ) {
         $wp_db_diff_included = $i;
     }
     return $wp_db_diff_included;
-}   # ddt_wp_db_diff_included( $i = NULL ) {
+}   # function ddt_wp_db_diff_included( $i = NULL ) {
 
 if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( ddt_get_options( )[ 'ddt_x-enable_diff' ] ) ) {
     ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
