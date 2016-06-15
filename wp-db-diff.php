@@ -37,28 +37,33 @@ operations done on the load of plugins loaded before this plugin. Some of the mo
 generate an error message like this "ERROR:ddt_post_query():unknown MySQL operation: ..." using the error_log function.
  */
  
-namespace mc_x_wp_db_tools {
+namespace ddt_x_wp_db_tools {
 
-define( 'MC_DIFF_CHANGES_TABLE', 'ddt_x_diff_tool_changes_1113' );
-define( 'MC_DIFF_PAGE_NAME', 'ddt_diff_tool' );
+const MC_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
+const MC_DIFF_PAGE_NAME     = 'ddt_diff_tool';
+
+function ddt_get_diff_changes_table( ) {
+    return MC_DIFF_CHANGES_TABLE;
+}
 
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
-    $wpdb->query( 'CREATE TABLE ' . MC_DIFF_CHANGES_TABLE .
+    $wpdb->query( 'CREATE TABLE ' . ddt_get_diff_changes_table( ) .
                   ' ( cid INT NOT NULL AUTO_INCREMENT, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
-};
+}   # function ddt_wp_db_diff_start_session( ) {
+
 
 function ddt_wp_db_diff_end_session( ) {
     global $wpdb;
-    $wpdb->query( 'DROP TABLE ' . MC_DIFF_CHANGES_TABLE );
-};
+    $wpdb->query( 'DROP TABLE ' . ddt_get_diff_changes_table( ) );
+}   # function ddt_wp_db_diff_end_session( ) {
 
 function ddt_wp_db_diff_prettify( $content ) {
     if ( is_serialized( $content ) ) {
         return json_encode( unserialize( $content ), JSON_HEX_TAG | JSON_FORCE_OBJECT );
     }
     return htmlspecialchars( $content );
-}
+}   # function ddt_wp_db_diff_prettify( $content ) {
 
 function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
     $length = strlen( $buffer );
@@ -119,13 +124,30 @@ at_start_of_token:
     return $first_quote . substr( $buffer, $first_start, $end - $first_start ) . $quote;
 }   # function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
 
-function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
+function ddt_tables_orig( $t = NULL ) {
+    static $tables_orig = NULL;
+    if ( $t !== NULL ) {
+        $tables_orig = $t;
+    }
+    return $tables_orig;
+}   # function ddt_tables_orig( $t = NULL ) {
+
+function ddt_id_for_table( $i = NULL ) {
+    static $id_for_table = NULL;
+    if ( $i !== NULL ) {
+        $id_for_table = $i;
+    }
+    return $id_for_table;
+}   # function ddt_id_for_table( $i = NULL ) {
+
+function ddt_wp_db_diff_init( ) {
     global $wpdb;
-    
-    $tables_orig = ddt_get_backup_tables( $options[ 'ddt_x-orig_suffix' ] );
-    
+
+    $options = ddt_get_options( );
+
+    ddt_tables_orig( $tables_orig = ddt_get_backup_tables( $options[ 'ddt_x-orig_suffix' ] ) );
+
     $id_for_table = [ ];
-    
     $tables = $wpdb->get_col( 'show tables' );
     foreach ( $tables as $table ) {
         if ( !in_array( $table, $tables_orig ) ) {
@@ -138,9 +160,14 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
             }
         }
     }
-    
-    $ddt_post_query = function ( $tables_orig, $id_for_table ) use ( $options ) {
+    ddt_id_for_table( $id_for_table );
+
+    function ddt_post_query( ) {
         global $wpdb;
+
+        $options      = ddt_get_options( );
+        $tables_orig  = ddt_tables_orig( );
+        $id_for_table = ddt_id_for_table( );
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
@@ -242,33 +269,35 @@ function ddt_wp_db_diff_init( $options, $ddt_add_main_menu ) {
                 # omit deletes of rows inserted in this session since the row id is not known
                 # and anyway the net result with respect to the session is that the insert did not occur
                 $doing_my_query = TRUE;
-                $wpdb->insert( MC_DIFF_CHANGES_TABLE, [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
+                $wpdb->insert( ddt_get_diff_changes_table( ), [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
                 $doing_my_query = FALSE;
             }
         }   # if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
-    };
+    }   # function ddt_post_query( ) {
 
-    add_filter( 'query', function( $query ) use ( $ddt_post_query, $tables_orig, $id_for_table ) {
-        $ddt_post_query( $tables_orig, $id_for_table );
+    add_filter( 'query', function( $query ) {
+        ddt_post_query( );
         return $query;
     } );
 
-    register_shutdown_function( function( $ddt_post_query, $tables_orig, $id_for_table ) {
-        $ddt_post_query( $tables_orig, $id_for_table );
-    }, $ddt_post_query, $tables_orig, $id_for_table );
+    register_shutdown_function( function( ) {
+        ddt_post_query( );
+    } );
     
     if ( !defined( 'DOING_AJAX' ) ) {
         
-        add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu, $options, $id_for_table ) {
-            
-            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
+        add_action( 'admin_menu', function( ) {
+            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, 'ddt_add_main_menu' );
             # export?
-            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool',     'Diff Tool', 'export', MC_DIFF_PAGE_NAME,   function( ) use ( $options, $id_for_table ) {
+            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', MC_DIFF_PAGE_NAME, function( ) {
                 global $wpdb;
+                
+                $options      = ddt_get_options( );
+                $id_for_table = ddt_id_for_table( );
 ?>
 <h2>Database Diff Tool</h2>
 <?php
-                if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . MC_DIFF_CHANGES_TABLE . '\'' ) ) {
+                if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . ddt_get_diff_changes_table( ) . '\'' ) ) {
 ?>
 <div class="ddt_x-error_message">
 There is no diff session active. You must enable the diff option of the &quot;Backup Tool&quot; to use the &quot;Diff Tool&quot;.
@@ -277,7 +306,7 @@ There is no diff session active. You must enable the diff option of the &quot;Ba
                     return;
                 }
                 
-                $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE );
+                $results = $wpdb->get_results( 'SELECT table_name, operation, row_ids FROM ' . ddt_get_diff_changes_table( ) );
                 if ( !$results ) {
 ?>
 <div class="ddt_x-info_message">
@@ -350,9 +379,9 @@ No database operations have been done on the selected tables.
     </div>
 </div>
 <?php
-            } );
-        } );
-    
+            } );  # add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', MC_DIFF_PAGE_NAME, function( ) {
+        } );   # add_action( 'admin_menu', function( ) {
+
         add_action( 'admin_enqueue_scripts', function( $hook ) {
             if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
                 wp_enqueue_style(  'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.css'                         );
@@ -365,8 +394,12 @@ No database operations have been done on the selected tables.
    
     if ( defined( 'DOING_AJAX' ) ) {
 
-        add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
+        add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) {
             global $wpdb;
+
+            $options      = ddt_get_options( );
+            $id_for_table = ddt_id_for_table( );
+
             if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
                 wp_nonce_ays( '' );
             }
@@ -385,7 +418,7 @@ No database operations have been done on the selected tables.
             $width      = !empty( $options[ 'ddt_x-table_width'      ][ $table ] ) ? $options[ 'ddt_x-table_width'      ][ $table ] : '';
             $cell_size  = !empty( $options[ 'ddt_x-table_cell_size'  ][ $table ] ) ? $options[ 'ddt_x-table_cell_size'  ][ $table ] : '';
             $sort_order = !empty( $options[ 'ddt_x-table_sort_order' ][ $table ] ) ? $options[ 'ddt_x-table_sort_order' ][ $table ] : '';
-            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . MC_DIFF_CHANGES_TABLE
+            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( )
                               . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
                               . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
 ?>
@@ -536,9 +569,11 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
 </div>
 <?php
             die;
-        } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) use ( $options, $id_for_table ) {
-           
-        add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
+        } );   # add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) {
+
+        add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) {
+            $options = ddt_get_options( );
+
             if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
                 wp_nonce_ays( '' );
             }
@@ -547,15 +582,16 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
                     $options[ $option ][ $_POST[ 'ddt_x-table' ] ] = $_POST[ $option ];
                 }
             }
-            update_option( 'ddt-x-wp_db_tools', $options ); 
-        } );   # add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) use ( $options ) {
+            \update_option( 'ddt-x-wp_db_tools', $options );
+            ddt_get_options( $options );
+        } );   # add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) {
         
     }   # if ( defined( 'DOING_AJAX' ) ) {
 
-};   # function ddt_wp_db_diff_init( $options ) {
+}   # function ddt_wp_db_diff_init( ) {
 
-ddt_wp_db_diff_init( $options, $ddt_add_main_menu );
+ddt_wp_db_diff_init( );
 
-}   # namespace mc_x_wp_db_tools {
+}   # namespace ddt_x_wp_db_tools {
 
 ?>

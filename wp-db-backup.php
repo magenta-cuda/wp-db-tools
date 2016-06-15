@@ -34,28 +34,34 @@ Useful for testing when you know only some tables will be changed so you don't h
 Most useful for repeated testing, i.e. backup table(s), test, restore table(s), test, restore table(s), ... test, restore table(s), delete backup.
  */
  
-namespace mc_x_wp_db_tools {
+namespace ddt_x_wp_db_tools {
 
-define( 'MC_BACKUP_PAGE_NAME', 'ddt_backup_tool' );
+const MC_BACKUP_PAGE_NAME = 'ddt_backup_tool';
+const MC_BACKUP           = 'mc_backup';
+const MC_SUCCESS          = 'STATUS:SUCCESS';
+const MC_FAILURE          = 'STATUS:FAILURE';
+const MC_COLS             = 4;
 
-define( 'MC_BACKUP', 'mc_backup' );
+function ddt_get_options( $o = NULL ) {
+    global $wpdb;
+    static $options = NULL;
 
-define( 'MC_SUCCESS', 'STATUS:SUCCESS' );
-define( 'MC_FAILURE', 'STATUS:FAILURE' );
+    if ( $o !== NULL ) {
+        $options = $o;
+    } else if ( $options === NULL ) {
+        $options = \get_option( 'ddt-x-wp_db_tools', [
+            'ddt_x-version'          => '2.0',
+            'orig_suffix'            => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
+            'ddt_x-orig_suffix'      => '_ddt_x_1113',
+            'ddt_x-enable_diff'      => 'enabled',
+            'ddt_x-table_width'      => [ ],
+            'ddt_x-table_cell_size'  => [ ],
+            'ddt_x-table_sort_order' => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
+        ] );
+    }
 
-define( 'MC_COLS', 4 );
-
-global $wpdb;
-
-$options = get_option( 'ddt-x-wp_db_tools', [
-    'ddt_x-version'          => '2.0',
-    'orig_suffix'            => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
-    'ddt_x-orig_suffix'      => '_ddt_x_1113',
-    'ddt_x-enable_diff'      => 'enabled',
-    'ddt_x-table_width'      => [ ],
-    'ddt_x-table_cell_size'  => [ ],
-    'ddt_x-table_sort_order' => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
-] );
+    return $options;
+}   # function ddt_get_options( $o = NULL ) {
 
 # N.B. no existing table must have a name ending with suffix $options[ 'ddt_x-orig_suffix' ]'
 
@@ -81,7 +87,7 @@ function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
         }
     }, $tables ) );
     return $backup_tables;
-}
+}   # function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
 
 # ddt_check_backup_suffix() verifies that no existing table already has the backup suffix
 
@@ -98,24 +104,25 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
         }
     }
     return TRUE;
-}
-    
-$ddt_add_main_menu = function ( ) use ( $options ) {
-        global $wpdb;
+}   # function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL, $backup_suffix = NULL ) {
+   
+function ddt_add_main_menu( ) {
+    global $wpdb;
+    $options = ddt_get_options( );
 ?>
 <h2>Database Backup Tool</h2>
 <?php
-        # get names of all tables in database
-        $tables     = $wpdb->get_col( "show tables" );
-        # remove names of backup tables
-        $suffix     = $options[ 'orig_suffix' ];
-        $suffix_len = strlen( $suffix );
-        $tables     = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
-            return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
-        } ) );
-        $orig_tables      = [ ];
-        $backup_tables    = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
-        $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
+    # get names of all tables in database
+    $tables     = $wpdb->get_col( "show tables" );
+    # remove names of backup tables
+    $suffix     = $options[ 'orig_suffix' ];
+    $suffix_len = strlen( $suffix );
+    $tables     = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
+        return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
+    } ) );
+    $orig_tables      = [ ];
+    $backup_tables    = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
+    $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
 ?>
 <div class="ddt_x-container">
     <form id="ddt_x-tables">
@@ -124,48 +131,48 @@ $ddt_add_main_menu = function ( ) use ( $options ) {
         <legend>WordPress Tables for Backup</legend>
         <table class="ddt_x-table_table">
 <?php
-        # create a HTML input element embedded in a HTML td element for each database table
-        $mc_backup = MC_BACKUP;
-        $columns = MC_COLS;
-        # guess how many columns will fit into the page
-        $max_len = 0;
-        foreach ( $tables as $i => $table ) {
-            if ( ( $len = strlen( $table ) ) > $max_len ) {
-                $max_len = $len;
-            }
+    # create a HTML input element embedded in a HTML td element for each database table
+    $mc_backup = MC_BACKUP;
+    $columns = MC_COLS;
+    # guess how many columns will fit into the page
+    $max_len = 0;
+    foreach ( $tables as $i => $table ) {
+        if ( ( $len = strlen( $table ) ) > $max_len ) {
+            $max_len = $len;
         }
-        if ( $max_len > 60 ) {
-            $columns = 1;
-        } else if ( $max_len > 40 ) {
-            $columns = 2;
-        } else if ( $max_len > 30 ) {
-            $columns = 3;
-        } else {
-            $columns = 4;
+    }
+    if ( $max_len > 60 ) {
+        $columns = 1;
+    } else if ( $max_len > 40 ) {
+        $columns = 2;
+    } else if ( $max_len > 30 ) {
+        $columns = 3;
+    } else {
+        $columns = 4;
+    }
+    $table_selected = FALSE;
+    foreach ( $tables as $i => $table ) {
+        if ( $i % $columns === 0 ) {
+            echo '<tr>';
         }
-        $table_selected = FALSE;
-        foreach ( $tables as $i => $table ) {
-            if ( $i % $columns === 0 ) {
-                echo '<tr>';
-            }
-            # create HTML input element with name = database table name and value = $mc_backup and text = database table name
-            # if table is already backed up set the checked attribute
-            $checked = in_array( $table, $backup_tables ) ? ' checked' : '';
-            $table_selected |= $checked;
-            echo <<<EOD
+        # create HTML input element with name = database table name and value = $mc_backup and text = database table name
+        # if table is already backed up set the checked attribute
+        $checked = in_array( $table, $backup_tables ) ? ' checked' : '';
+        $table_selected |= $checked;
+        echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="ddt_x-table_checkbox" value="$mc_backup"$checked>
                 <label for="$table">$table</label>
             </td>
 EOD;
-            if ( $i % $columns === $columns - 1 ) {
-                echo '</tr>';
-            }
-        }
-        if ( $i % $columns !== $columns - 1 ) {
+        if ( $i % $columns === $columns - 1 ) {
             echo '</tr>';
-        }   # foreach ( $tables as $i => $table ) {
-        # this form invokes the AJAX action wp_ajax_mc_backup_tables
+        }
+    }   # foreach ( $tables as $i => $table ) {
+    if ( $i % $columns !== $columns - 1 ) {
+        echo '</tr>';
+    }
+    # this form invokes the AJAX action wp_ajax_mc_backup_tables
 ?>
         </table>
         <input type="hidden" name="action" value="mc_backup_tables">
@@ -181,14 +188,14 @@ EOD;
             <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
         <button id="mc_suffix_verify" type="button">Verify</button>
 <?php
-        if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+    if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
         <label for="ddt_x-enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff: </label>
         <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled"
             <?php if ( !empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' checked'; } ?><?php if ( $backup_tables ) { echo ' disabled'; } ?>>
         <input type="hidden" name="ddt_x-nonce" id="ddt_x-nonce" value="<?php echo wp_create_nonce( 'ddt_x-from_backup' ); ?>">
 <?php
-        }
+    }
 ?>
     </fieldset>
     <fieldset id="ddt_x-important_messages" class="mc_db_tools_pane">
@@ -199,7 +206,7 @@ You should always have a real backup just in case you inadvertantly omit a requi
     </fieldset>
     </form>
 <?php
-        if ( $backup_suffix_ok ) {
+    if ( $backup_suffix_ok ) {
 ?>
     <div id="mc_main_buttons">
         <button id="mc_backup"       class="mc-wpdbdt-btn" type="button"
@@ -212,7 +219,7 @@ You should always have a real backup just in case you inadvertantly omit a requi
             <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
     </div>
 <?php
-        }
+    }
 ?>
     <fieldset id="mc_db_tools_log" class="mc_db_tools_pane">
         <legend>Log</legend>
@@ -220,11 +227,11 @@ You should always have a real backup just in case you inadvertantly omit a requi
     </fieldset>
 </div>
 <?php
-};   # $ddt_add_main_menu = function ( ) use ( $options ) {
+}   # function ddt_add_main_menu( ) {
         
-add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, $ddt_add_main_menu );
-} );   # add_action( 'admin_menu', function( ) use ( $ddt_add_main_menu ) {
+add_action( 'admin_menu', function( ) {
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, 'ddt_add_main_menu' );
+} );   # add_action( 'admin_menu', function( ) {
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {
     if ( strpos( $hook, MC_BACKUP_PAGE_NAME ) !== FALSE ) {
@@ -233,21 +240,30 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     }
 } );
     
-$wp_db_diff_included = NULL;
-if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( $options[ 'ddt_x-enable_diff' ] ) ) {
-    $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
+ddt_wp_db_diff_included( $i = NULL ) {
+    static $wp_db_diff_included = NULL;
+    if ( $i !== NULL ) {
+        $wp_db_diff_included = $i;
+    }
+    return $wp_db_diff_included;
+}   # ddt_wp_db_diff_included( $i = NULL ) {
+
+if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( ddt_get_options( )[ 'ddt_x-enable_diff' ] ) ) {
+    ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
 }
 
 if ( defined( 'DOING_AJAX' ) ) {
-    
+
+    # AJAX Helper Functions
+
     # ddt_wpdb_query() is a wrapper for $wpdb->query() for logging SQL commands and results
-    
+
     function ddt_wpdb_query( $sql, &$messages ) {
         global $wpdb;
         $result = $wpdb->query( $sql );
         $messages[ ] = ( $result === FALSE ? 'Error: ' : '' ) . "\"$sql\" => ". ( $result === FALSE ? 'FAILED' : $result );
         return $result;
-    }
+    }   # function ddt_wpdb_query( $sql, &$messages ) {
 
     function ddt_format_messages( $messages, $tag ) {
         return array_map( function( $message ) use ( $tag ) {
@@ -257,24 +273,30 @@ if ( defined( 'DOING_AJAX' ) ) {
                 return "\t" . $message;
             }
         }, $messages );
-    }
+    }   # function ddt_format_messages( $messages, $tag ) {
+    
+    # AJAX Handlers
     
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
-    add_action( 'wp_ajax_mc_backup_tables', function( ) use ( $options, $wp_db_diff_included, $ddt_add_main_menu ) {
+    add_action( 'wp_ajax_mc_backup_tables', function( ) {
+        $options = ddt_get_options( );
+
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
+
         $action = 'backup tables';
         if ( !empty( $_POST[ 'ddt_x-enable_diff' ] ) ) {
             $options[ 'ddt_x-enable_diff' ] = 'enabled';
-            if ( !$wp_db_diff_included ) {
-                $wp_db_diff_included = include_once( __DIR__ . '/wp-db-diff.php' );
+            if ( !ddt_wp_db_diff_included( ) ) {
+                ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
             }
         } else {
             $options[ 'ddt_x-enable_diff' ] = NULL;
         }
-        update_option( 'ddt-x-wp_db_tools', $options );
+        \update_option( 'ddt-x-wp_db_tools', $options );
+        ddt_get_options( $options );
         
         $messages = [ ];
         # extract only table names from HTTP query parameters
@@ -304,18 +326,21 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
-        if ( !empty( $options[ 'ddt_x-enable_diff' ] ) && !empty( $wp_db_diff_included ) ) {
+        if ( !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
             ddt_wp_db_diff_start_session( );
         }
-        die;
-    } );   # add_action( 'wp_ajax_mc_backup_tables', function( ) use ( &$options ) {
+        exit( );
+    } );   # add_action( 'wp_ajax_mc_backup_tables', function( ) {
 
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
-    
-    add_action( 'wp_ajax_mc_restore_tables', function( ) use ( $options, $wp_db_diff_included ) {
+
+    add_action( 'wp_ajax_mc_restore_tables', function( ) {
+        $options = ddt_get_options( );
+
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
+
         $action      = 'restore tables';
         # get names of tables that have a backup copy
         $tables      = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
@@ -345,16 +370,17 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
-        if ( !empty( $wp_db_diff_included ) ) {
+        if ( ddt_wp_db_diff_included( ) ) {
             ddt_wp_db_diff_end_session( );
             ddt_wp_db_diff_start_session( );
         }
-        die;
+        exit( );
     } );   # add_action( 'wp_ajax_mc_restore_tables', function( ) {
 
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
-    
-    add_action( 'wp_ajax_mc_delete_backup', function( ) use ( $options, $wp_db_diff_included ) {
+
+    add_action( 'wp_ajax_mc_delete_backup', function( ) {
+        $options = ddt_get_options( );
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
@@ -378,28 +404,32 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
-        if ( !empty( $wp_db_diff_included ) ) {
+        if ( ddt_wp_db_diff_included( ) ) {
             ddt_wp_db_diff_end_session( );
         }
-        die;
+        exit( );
     } );   # add_action( 'wp_ajax_mc_delete_backup', function( ) {
         
-    add_action( 'wp_ajax_mc_check_backup_suffix', function( ) use ( $options ) {
+    add_action( 'wp_ajax_mc_check_backup_suffix', function( ) {
+        $options = ddt_get_options( );
+
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
+
         $suffix = $_POST[ 'backup_suffix' ];
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
             $options[ 'ddt_x-orig_suffix' ] = $options[ 'orig_suffix' ] = $suffix;
-            update_option( 'ddt-x-wp_db_tools', $options );
+            \update_option( 'ddt-x-wp_db_tools', $options );
+            ddt_get_options( $options );
         }   
         $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => ( $bad_table ? $bad_table . $suffix : NULL ) ] );
         echo $result;
-        die;
+        exit( );
     } );   # add_action( 'wp_ajax_check_backup_suffix', function( ) {
    
 }   #if ( defined( 'DOING_AJAX' ) ) {
 
-}   # namespace mc_x_wp_db_tools {
+}   # namespace ddt_x_wp_db_tools {
 
 ?>
