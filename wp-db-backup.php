@@ -300,14 +300,14 @@ if ( defined( 'DOING_AJAX' ) ) {
         \update_option( 'ddt-x-wp_db_tools', $options );
         ddt_get_options( $options );
         
-        $messages = [ ];
+        $messages     = [ ];
         # extract only table names from HTTP query parameters
-        $tables      = array_keys( array_filter( $_POST, function( $value ) {
+        $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
             return $value === MC_BACKUP;
         } ) );
         $suffix       = $options[ 'orig_suffix' ];
         $messages[ ]  = $action . ': ' . implode( ', ', $tables );
-        $tables_to_do = $tables;
+        $tables_to_do = $_REQUEST;
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables=' . print_r( $tables, true ) );
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables_to_do=' . print_r( $tables_to_do, true ) );
         $status       = MC_SUCCESS;
@@ -327,15 +327,22 @@ if ( defined( 'DOING_AJAX' ) ) {
                 $status = MC_FAILURE;
                 break;
             }
+            unset( $tables_to_do[ $table ] );
         }
-        if ( !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
-            ddt_wp_db_diff_start_session( );
+        if ( !in_array( MC_BACKUP, $tables_to_do ) ) {
+            $messages[ ] = $action . ': ' . $status;
+            if ( $status === MC_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
+                ddt_wp_db_diff_start_session( );
+            }
         }
-        $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
-        wp_send_json_success( $data );
+        if ( $status === MC_SUCCESS ) {
+            wp_send_json_success( $data );
+        } else {
+            wp_send_json_error( $data );
+        }
         #echo implode( "\n", $messages ) . "\n";
         #exit( );
     } );   # add_action( 'wp_ajax_mc_backup_tables', function( ) {

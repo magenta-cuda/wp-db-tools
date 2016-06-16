@@ -30,11 +30,10 @@ jQuery( function( ) {
 
     // Create backup
     
-    jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
-        var button = this;
-        jQuery( "#mc_status" ).html( "working..." );
-        // data will contain the names and values of checked HTML input elements of the form with action = 'mc_backup_tables'
-        var data = jQuery( "form#ddt_x-tables" ).serialize();
+    function backupTables( data ) {
+        var log = jQuery( "#mc_status" );
+        var text = log.text( );
+        log.text( text + "working...\n" );
         // invoke the AJAX action wp_ajax_mc_backup_tables
         jQuery.post( ajaxurl, data, function ( response ) {
             console.log( response );
@@ -45,7 +44,6 @@ jQuery( function( ) {
             } );
             jQuery( "#mc_status" ).html( text );
             if ( text.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
-                button.disabled = true;
                 jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
@@ -54,6 +52,15 @@ jQuery( function( ) {
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", true  );
             }
         } );
+    }
+    jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
+        var button = this;
+        button.disabled = true;
+        jQuery( "#mc_status" ).text( "" );
+        // data will contain the names and values of checked HTML input elements of the form with action = 'mc_backup_tables'
+        var data = jQuery( "form#ddt_x-tables" ).serialize( );
+        backupTables( data );
+        e.preventDefault( );
     } );
     
     // Restore from backup
