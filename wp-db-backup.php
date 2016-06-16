@@ -282,12 +282,14 @@ if ( defined( 'DOING_AJAX' ) ) {
     add_action( 'wp_ajax_mc_backup_tables', function( ) {
         $options = ddt_get_options( );
 
-        if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
-            wp_nonce_ays( '' );
+        error_log( 'ACTION:wp_ajax_mc_backup_tables():$_REQUEST=' . print_r( $_REQUEST, true ) );
+
+        if ( !\wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
+            \wp_nonce_ays( '' );
         }
 
         $action = 'backup tables';
-        if ( !empty( $_POST[ 'ddt_x-enable_diff' ] ) ) {
+        if ( !empty( $_REQUEST[ 'ddt_x-enable_diff' ] ) ) {
             $options[ 'ddt_x-enable_diff' ] = 'enabled';
             if ( !ddt_wp_db_diff_included( ) ) {
                 ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
@@ -303,9 +305,12 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables      = array_keys( array_filter( $_POST, function( $value ) {
             return $value === MC_BACKUP;
         } ) );
-        $suffix      = $options[ 'orig_suffix' ];
-        $messages[ ] = $action . ': ' . implode( ', ', $tables );
-        $status      = MC_SUCCESS;
+        $suffix       = $options[ 'orig_suffix' ];
+        $messages[ ]  = $action . ': ' . implode( ', ', $tables );
+        $tables_to_do = $tables;
+        error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables=' . print_r( $tables, true ) );
+        error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables_to_do=' . print_r( $tables_to_do, true ) );
+        $status       = MC_SUCCESS;
         foreach ( $tables as $table ) {
             # rename original table to use as backup
             if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO {$table}{$suffix}", $messages ) === FALSE ) {
@@ -323,13 +328,16 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
         }
-        $messages[ ] = $action . ': ' . $status;
-        $messages    = ddt_format_messages( $messages, $action );
-        echo implode( "\n", $messages ) . "\n";
         if ( !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
             ddt_wp_db_diff_start_session( );
         }
-        exit( );
+        $messages[ ] = $action . ': ' . $status;
+        $messages    = ddt_format_messages( $messages, $action );
+        $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
+        error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
+        wp_send_json_success( $data );
+        #echo implode( "\n", $messages ) . "\n";
+        #exit( );
     } );   # add_action( 'wp_ajax_mc_backup_tables', function( ) {
 
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action

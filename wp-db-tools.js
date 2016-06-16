@@ -37,8 +37,14 @@ jQuery( function( ) {
         var data = jQuery( "form#ddt_x-tables" ).serialize();
         // invoke the AJAX action wp_ajax_mc_backup_tables
         jQuery.post( ajaxurl, data, function ( response ) {
-            jQuery( "#mc_status" ).html( response );
-            if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
+            console.log( response );
+            console.log( response.data.messages );
+            var text = "";
+            response.data.messages.forEach( function( message ) {
+                text += message + "\n";
+            } );
+            jQuery( "#mc_status" ).html( text );
+            if ( text.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
                 button.disabled = true;
                 jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
