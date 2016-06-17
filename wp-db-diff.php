@@ -124,14 +124,6 @@ at_start_of_token:
     return $first_quote . substr( $buffer, $first_start, $end - $first_start ) . $quote;
 }   # function ddt_wp_db_diff_get_next_mysql_token( $buffer, &$position ) {
 
-function ddt_tables_orig( $t = NULL ) {
-    static $tables_orig = NULL;
-    if ( $t !== NULL ) {
-        $tables_orig = $t;
-    }
-    return $tables_orig;
-}   # function ddt_tables_orig( $t = NULL ) {
-
 function ddt_id_for_table( $i = NULL ) {
     static $id_for_table = NULL;
     if ( $i !== NULL ) {
@@ -145,12 +137,12 @@ function ddt_wp_db_diff_init( ) {
 
     $options = ddt_get_options( );
 
-    ddt_tables_orig( $tables_orig = ddt_get_backup_tables( $options[ 'ddt_x-orig_suffix' ] ) );
+    $backed_up_tables = ddt_backed_up_tables( );
 
     $id_for_table = [ ];
     $tables = $wpdb->get_col( 'show tables' );
     foreach ( $tables as $table ) {
-        if ( !in_array( $table, $tables_orig ) ) {
+        if ( !in_array( $table, $backed_up_tables ) ) {
             continue;
         }
         $results= $wpdb->get_results( 'show columns from ' . $table );
@@ -165,13 +157,13 @@ function ddt_wp_db_diff_init( ) {
     function ddt_post_query( ) {
         global $wpdb;
 
-        $options      = ddt_get_options( );
-        $tables_orig  = ddt_tables_orig( );
-        $id_for_table = ddt_id_for_table( );
+        $options          = ddt_get_options( );
+        $backed_up_tables = ddt_backed_up_tables( );
+        $id_for_table     = ddt_id_for_table( );
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
-            $regex_of_tables_orig = '#(\s|`)(' . implode( '|', $tables_orig ) . ')\1#';
+            $regex_of_tables_orig = '#(\s|`)(' . implode( '|', $backed_up_tables ) . ')\1#';
         }
  
         static $doing_my_query = FALSE;
@@ -186,7 +178,7 @@ function ddt_wp_db_diff_init( ) {
             if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
-                if ( !in_array( $table, $tables_orig ) ) {
+                if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
                 $operation = 'INSERT';
@@ -224,7 +216,7 @@ function ddt_wp_db_diff_init( ) {
             } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
                 # UPDATE operation
                 $table = $matches[ 3 ];
-                if ( !in_array( $table, $tables_orig ) ) {
+                if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
                 $operation      = 'UPDATE';
@@ -240,7 +232,7 @@ function ddt_wp_db_diff_init( ) {
             } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
                 # DELETE operation
                 $table = $matches[ 3 ];
-                if ( !in_array( $table, $tables_orig ) ) {
+                if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
                 $operation      = 'DELETE';

@@ -29,6 +29,8 @@ License:     GPL2
 
 namespace ddt_x_wp_db_tools {
 
+error_log( 'wp-db-tools-loader.php:backtrace=' . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) );
+
 function ddt_wp_db_tools_init( ) {
     # The check for version is in its own file since if the file contains PHP 5.4 code an ugly fatal error will be triggered instead
 
@@ -51,8 +53,10 @@ EOD;
     # load from inside a function to hide variables from the global scope
     
     require_once( __DIR__  . '/wp-db-backup.php' );
-
-};
+    if ( ddt_backed_up_tables( ) ) {
+        ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
+    }
+}
 
 }   # namespace ddt_x_wp_db_tools {
 

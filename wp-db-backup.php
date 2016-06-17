@@ -67,8 +67,9 @@ function ddt_get_options( $o = NULL ) {
 
 # The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
 
-function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
+function ddt_get_backup_tables( &$orig_tables = NULL ) {
     global $wpdb;
+    $suffix = ddt_get_options( )[ 'orig_suffix' ];
     # extract only table names with the backup suffix and remove the backup suffix
     $tables     = $wpdb->get_col( "show tables" );
     $suffix_len = strlen( $suffix );
@@ -87,14 +88,23 @@ function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
         }
     }, $tables ) );
     return $backup_tables;
-}   # function ddt_get_backup_tables( $suffix, &$orig_tables = NULL ) {
+}   # function ddt_get_backup_tables( &$orig_tables = NULL ) {
+
+function ddt_backed_up_tables( ) {
+    static $backed_up_tables = NULL;
+    if ( $backed_up_tables === NULL ) {
+        $backed_up_tables = ddt_get_backup_tables( );
+    }
+    return $backed_up_tables;
+}   # function ddt_backed_up_tables( ) {
+
 
 # ddt_check_backup_suffix() verifies that no existing table already has the backup suffix
 
-function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL, $backup_suffix = NULL ) {
+function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
     if ( $backup_tables === NULL || $orig_tables === NULL ) {
         $orig_tables   = [ ];
-        $backup_tables = ddt_get_backup_tables( $backup_suffix, $orig_tables );
+        $backup_tables = ddt_get_backup_tables( $orig_tables );
     }
     $bad_table = NULL;
     foreach ( $backup_tables as $table ) {
@@ -104,8 +114,8 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
         }
     }
     return TRUE;
-}   # function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL, $backup_suffix = NULL ) {
-   
+}   # function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
+
 function ddt_add_main_menu( ) {
     global $wpdb;
     $options = ddt_get_options( );
@@ -121,7 +131,7 @@ function ddt_add_main_menu( ) {
         return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
     } ) );
     $orig_tables      = [ ];
-    $backup_tables    = ddt_get_backup_tables( $options[ 'orig_suffix' ], $orig_tables );
+    $backup_tables    = ddt_get_backup_tables( $orig_tables );
     $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
 ?>
 <div class="ddt_x-container">
@@ -350,16 +360,14 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
 
     add_action( 'wp_ajax_mc_restore_tables', function( ) {
-        $options = ddt_get_options( );
-
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
 
         $action      = 'restore tables';
         # get names of tables that have a backup copy
-        $tables      = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
-        $suffix      = $options[ 'orig_suffix' ];
+        $tables      = ddt_backed_up_tables( );
+        $suffix      = ddt_get_options( )[ 'orig_suffix' ];
         $messages    = [ ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
         $status      = MC_SUCCESS;
@@ -395,13 +403,12 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
 
     add_action( 'wp_ajax_mc_delete_backup', function( ) {
-        $options = ddt_get_options( );
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
         $action   = 'delete tables';
-        $suffix   = $options[ 'orig_suffix' ];
-        $tables   = ddt_get_backup_tables( $options[ 'orig_suffix' ] );
+        $suffix   = ddt_get_options( )[ 'orig_suffix' ];
+        $tables   = ddt_backed_up_tables( );
         $messages = [ ];
         if ( $tables ) {
             $messages[ ] = $action . ': ' . implode(  $suffix . ', ', $tables ) . $suffix;
