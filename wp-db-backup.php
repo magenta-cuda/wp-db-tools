@@ -36,11 +36,12 @@ Most useful for repeated testing, i.e. backup table(s), test, restore table(s), 
  
 namespace ddt_x_wp_db_tools {
 
-const MC_BACKUP_PAGE_NAME = 'ddt_backup_tool';
-const MC_BACKUP           = 'mc_backup';
-const MC_SUCCESS          = 'STATUS:SUCCESS';
-const MC_FAILURE          = 'STATUS:FAILURE';
-const MC_COLS             = 4;
+const DDT_BACKUP_PAGE_NAME  = 'ddt_backup_tool';
+const DDT_BACKUP           = 'mc_backup';
+const DDT_SUCCESS          = 'STATUS:SUCCESS';
+const DDT_FAILURE          = 'STATUS:FAILURE';
+const DDT_COLS             = 4;
+const DDT_DELTA            = 256;   # TODO:
 
 function ddt_get_options( $o = NULL ) {
     global $wpdb;
@@ -142,8 +143,8 @@ function ddt_add_main_menu( ) {
         <table class="ddt_x-table_table">
 <?php
     # create a HTML input element embedded in a HTML td element for each database table
-    $mc_backup = MC_BACKUP;
-    $columns = MC_COLS;
+    $mc_backup = DDT_BACKUP;
+    $columns   = DDT_COLS;
     # guess how many columns will fit into the page
     $max_len = 0;
     foreach ( $tables as $i => $table ) {
@@ -240,11 +241,11 @@ You should always have a real backup just in case you inadvertantly omit a requi
 }   # function ddt_add_main_menu( ) {
         
 add_action( 'admin_menu', function( ) {
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', MC_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
 } );   # add_action( 'admin_menu', function( ) {
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {
-    if ( strpos( $hook, MC_BACKUP_PAGE_NAME ) !== FALSE ) {
+    if ( strpos( $hook, DDT_BACKUP_PAGE_NAME ) !== FALSE ) {
         wp_enqueue_style(  'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
         wp_enqueue_script( 'wp-db-tools', plugin_dir_url( __FILE__ ) . 'wp-db-tools.js', [ 'jquery' ] );
     }
@@ -313,42 +314,45 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages     = [ ];
         # extract only table names from HTTP query parameters
         $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
-            return $value === MC_BACKUP;
+            return $value === DDT_BACKUP;
         } ) );
         $suffix       = $options[ 'orig_suffix' ];
         $messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables=' . print_r( $tables, true ) );
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables_to_do=' . print_r( $tables_to_do, true ) );
-        $status       = MC_SUCCESS;
+        $status       = DDT_SUCCESS;
         foreach ( $tables as $table ) {
             # rename original table to use as backup
             if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
             # create new table with original name and schema
             if ( ddt_wpdb_query( "CREATE TABLE $table LIKE {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
             # copy backup into new table
             if ( ddt_wpdb_query( "INSERT INTO $table SELECT * FROM {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
             unset( $tables_to_do[ $table ] );
+            if ( ( count( $_REQUEST ) - count( $tables_to_do ) ) >= DDT_DELTA ) {
+                break;
+            }
         }
-        if ( !in_array( MC_BACKUP, $tables_to_do ) ) {
+        if ( !in_array( DDT_BACKUP, $tables_to_do ) || $status === DDT_FAILURE ) {
             $messages[ ] = $action . ': ' . $status;
-            if ( $status === MC_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
+            if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
                 ddt_wp_db_diff_start_session( );
             }
         }
         $messages    = ddt_format_messages( $messages, $action );
         $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
-        if ( $status === MC_SUCCESS ) {
+        if ( $status === DDT_SUCCESS ) {
             wp_send_json_success( $data );
         } else {
             wp_send_json_error( $data );
@@ -370,23 +374,23 @@ if ( defined( 'DOING_AJAX' ) ) {
         $suffix      = ddt_get_options( )[ 'orig_suffix' ];
         $messages    = [ ];
         $messages[ ] = $action . ': ' . implode( ', ', $tables );
-        $status      = MC_SUCCESS;
+        $status      = DDT_SUCCESS;
         # restore all tables that have a backup copy
         foreach ( $tables as $table ) {
             # drop the table to be restored
             if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
                 # this is not a critical error so we can ignore it
-                #$status = MC_FAILURE;
+                #$status = DDT_FAILURE;
                 #break;
             }
             # create a new empty table with the database schema of the corresponding backup table
             if ( ddt_wpdb_query( "CREATE TABLE $table LIKE {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
             # copy the rows from the corresponding backup table into the newly created table
             if ( ddt_wpdb_query( "INSERT $table SELECT * FROM {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
         }
@@ -415,11 +419,11 @@ if ( defined( 'DOING_AJAX' ) ) {
         } else {
             $messages[ ] = $action . ': ';
         }
-        $status = MC_SUCCESS;
+        $status = DDT_SUCCESS;
         foreach ( $tables as $table ) {
             # drop the backup table
             if ( ddt_wpdb_query( "DROP TABLE {$table}{$suffix}", $messages ) === FALSE ) {
-                $status = MC_FAILURE;
+                $status = DDT_FAILURE;
                 break;
             }
         }

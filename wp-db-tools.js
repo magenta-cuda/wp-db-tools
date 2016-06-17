@@ -43,7 +43,7 @@ jQuery( function( ) {
                 text += message + "\n";
             } );
             jQuery( "#mc_status" ).html( text );
-            if ( text.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
+            if ( text.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
                 jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
@@ -81,7 +81,7 @@ jQuery( function( ) {
         jQuery( "#mc_status" ).html( "working..." );
         jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': nonce }, function ( response ) {
             jQuery( "#mc_status" ).html( response );
-            if ( response.indexOf( "<?php echo MC_SUCCESS; ?>" ) ) {
+            if ( response.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
                 button.disabled = true;
                 jQuery( "div#mc_main_buttons button#mc_backup"                   ).prop( "disabled", false );
                 jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );

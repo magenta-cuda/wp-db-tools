@@ -39,11 +39,11 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
  
 namespace ddt_x_wp_db_tools {
 
-const MC_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
-const MC_DIFF_PAGE_NAME     = 'ddt_diff_tool';
+const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
+const DDT_DIFF_PAGE_NAME     = 'ddt_diff_tool';
 
 function ddt_get_diff_changes_table( ) {
-    return MC_DIFF_CHANGES_TABLE;
+    return DDT_DIFF_CHANGES_TABLE;
 }
 
 function ddt_wp_db_diff_start_session( ) {
@@ -279,9 +279,9 @@ function ddt_wp_db_diff_init( ) {
     if ( !defined( 'DOING_AJAX' ) ) {
         
         add_action( 'admin_menu', function( ) {
-            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', MC_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
+            add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
             # export?
-            add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', MC_DIFF_PAGE_NAME, function( ) {
+            add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', DDT_DIFF_PAGE_NAME, function( ) {
                 global $wpdb;
                 
                 $options      = ddt_get_options( );
@@ -371,11 +371,11 @@ No database operations have been done on the selected tables.
     </div>
 </div>
 <?php
-            } );  # add_submenu_page( MC_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', MC_DIFF_PAGE_NAME, function( ) {
+            } );  # add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', DDT_DIFF_PAGE_NAME, function( ) {
         } );   # add_action( 'admin_menu', function( ) {
 
         add_action( 'admin_enqueue_scripts', function( $hook ) {
-            if ( strpos( $hook, MC_DIFF_PAGE_NAME ) !== FALSE ) {
+            if ( strpos( $hook, DDT_DIFF_PAGE_NAME ) !== FALSE ) {
                 wp_enqueue_style(  'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.css'                         );
                 wp_enqueue_script( 'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.js',            [ 'jquery' ] );
                 wp_enqueue_script( 'jquery.tablesorter', plugin_dir_url( __FILE__ ) . 'jquery.tablesorter.min.js', [ 'jquery' ] );
