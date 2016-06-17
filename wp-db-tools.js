@@ -14,10 +14,22 @@ jQuery( function( ) {
         } );
     }
 
+    // convenience buttons to select or clear all checkboxes
+    
+    jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
+        jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", true );
+        e.preventDefault( );
+    } );
+
+    jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
+        jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", false );
+        e.preventDefault( );
+    } );
+    
     // enable backup button only if a table is selected
     
     jQuery( "input.ddt_x-table_checkbox[type='checkbox']" ).change( function( e ) {
-        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox[type='checkbox']:checked" ).length === 0 );
+        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
     } );
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements

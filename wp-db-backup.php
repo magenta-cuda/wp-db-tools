@@ -36,7 +36,7 @@ Most useful for repeated testing, i.e. backup table(s), test, restore table(s), 
  
 namespace ddt_x_wp_db_tools {
 
-const DDT_BACKUP_PAGE_NAME  = 'ddt_backup_tool';
+const DDT_BACKUP_PAGE_NAME = 'ddt_backup_tool';
 const DDT_BACKUP           = 'mc_backup';
 const DDT_SUCCESS          = 'STATUS:SUCCESS';
 const DDT_FAILURE          = 'STATUS:FAILURE';
@@ -186,6 +186,8 @@ EOD;
     # this form invokes the AJAX action wp_ajax_mc_backup_tables
 ?>
         </table>
+        <button type="button" id="ddt_x-select_all_btn" class="ddt_x-button">Select All</button>
+        <button type="button" id="ddt_x-clear_all_btn" class="ddt_x-button">Clear All</button>
         <input type="hidden" name="action" value="mc_backup_tables">
     </fieldset>
     <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
@@ -214,6 +216,8 @@ EOD;
 It is very important that you select all the tables that may be changed.
 Otherwise when you restore the tables you may be left with an inconsistent database.
 You should always have a real backup just in case you inadvertantly omit a required table.
+If you are not sure about which tables will be changed you should select all tables.
+Although not efficient this is always safe.
     </fieldset>
     </form>
 <?php
