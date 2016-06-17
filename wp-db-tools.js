@@ -383,4 +383,9 @@ jQuery( function( ) {
         jQuery( "div#ddt_x-detail_popup" ).hide( );
     } );
 
+    jQuery( "button#ddt_x-reload_diff" ).click( function( e ) {
+        location.reload( true );
+        e.preventDefault( );
+    } );
+
 } );

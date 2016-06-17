@@ -288,6 +288,7 @@ function ddt_wp_db_diff_init( ) {
                 $id_for_table = ddt_id_for_table( );
 ?>
 <h2>Database Diff Tool</h2>
+<button type="button" id="ddt_x-reload_diff" class="ddt_x-button">Refresh</button>
 <?php
                 if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . ddt_get_diff_changes_table( ) . '\'' ) ) {
 ?>
