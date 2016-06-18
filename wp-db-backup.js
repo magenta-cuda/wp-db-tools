@@ -4,20 +4,20 @@ jQuery( document ).ready( function( ) {
     
     jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", true );
-        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", false );
+        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", false );
         e.preventDefault( );
     } );
 
     jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", false );
-        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", true );
+        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", true );
         e.preventDefault( );
     } );
     
     // enable backup button only if a table is selected
     
     jQuery( "input.ddt_x-table_checkbox[type='checkbox']" ).change( function( e ) {
-        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
+        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
     } );
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements
@@ -44,16 +44,16 @@ jQuery( document ).ready( function( ) {
             } );
             jQuery( "#mc_status" ).html( text );
             if ( text.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
-                jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
-                jQuery( "div#mc_main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
-                jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
-                jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", true  );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", true  );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", true  );
+                jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
+                jQuery( "div#ddt_x-main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
+                jQuery( "div#ddt_x-main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
+                jQuery( "fieldset#ddt_x-table_fields"                               ).prop( "disabled", true  );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix"    ).prop( "disabled", true  );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"      ).prop( "disabled", true  );
             }
         } );
     }
-    jQuery( "button.mc-wpdbdt-btn#mc_backup" ).click( function( e ) {
+    jQuery( "button.ddt_x-button#mc_backup" ).click( function( e ) {
         var button = this;
         button.disabled = true;
         jQuery( "#mc_status" ).text( "" );
@@ -65,7 +65,7 @@ jQuery( document ).ready( function( ) {
     
     // Restore from backup
     
-    jQuery( "button.mc-wpdbdt-btn#ddt_x-restore" ).click( function( e ) {
+    jQuery( "button.ddt_x-button#ddt_x-restore" ).click( function( e ) {
         var nonce = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery( "#mc_status" ).html( "working..." );
         jQuery.post( ajaxurl, { action: "mc_restore_tables", 'ddt_x-nonce': nonce }, function ( response ) {
@@ -75,7 +75,7 @@ jQuery( document ).ready( function( ) {
     
     // Delete backup
     
-    jQuery( "button.mc-wpdbdt-btn#ddt_x-delete" ).click( function( e ) {
+    jQuery( "button.ddt_x-button#ddt_x-delete" ).click( function( e ) {
         var button = this;
         var nonce  = jQuery( "input#ddt_x-nonce" ).val( );
         jQuery( "#mc_status" ).html( "working..." );
@@ -83,17 +83,17 @@ jQuery( document ).ready( function( ) {
             jQuery( "#mc_status" ).html( response );
             if ( response.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
                 button.disabled = true;
-                jQuery( "div#mc_main_buttons button#mc_backup"                   ).prop( "disabled", false );
-                jQuery( "div#mc_main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );
-                jQuery( "div#mc_main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", true  );
-                jQuery( "fieldset#ddt_x-table_fields"                            ).prop( "disabled", false );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix" ).prop( "disabled", false );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"   ).prop( "disabled", false );
+                jQuery( "div#ddt_x-main_buttons button#mc_backup"                   ).prop( "disabled", false );
+                jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );
+                jQuery( "div#ddt_x-main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", true  );
+                jQuery( "fieldset#ddt_x-table_fields"                               ).prop( "disabled", false );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix"    ).prop( "disabled", false );
+                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"      ).prop( "disabled", false );
             }
         } );
     } );
     
-    jQuery( "button.mc-wpdbdt-btn#ddt_x-diff_tool" ).click( function( e ) {
+    jQuery( "button.ddt_x-button#ddt_x-diff_tool" ).click( function( e ) {
         var href = window.location.href;
         href = href.substr( 0, href.indexOf( "?page=" ) + 6 ) + "ddt_diff_tool";
         window.open( href, "_blank" );
@@ -104,7 +104,7 @@ jQuery( document ).ready( function( ) {
     jQuery( "input#ddt_x-backup_suffix" ).change( function( e ) {
         var table_pane   = jQuery( "fieldset#ddt_x-table_fields" );
         var error_pane   = jQuery( "div#mc_db_tools_error_pane" );
-        var main_buttons = jQuery( "div#mc_main_buttons" );
+        var main_buttons = jQuery( "div#ddt_x-main_buttons" );
         var nonce        = jQuery( "input#ddt_x-nonce" ).val( );
         error_pane.text( "checking backup suffix..." ).show( );
         var suffix = this.value;

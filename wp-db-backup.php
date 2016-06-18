@@ -186,8 +186,10 @@ EOD;
     # this form invokes the AJAX action wp_ajax_mc_backup_tables
 ?>
         </table>
-        <button type="button" id="ddt_x-select_all_btn" class="ddt_x-button">Select All</button>
-        <button type="button" id="ddt_x-clear_all_btn" class="ddt_x-button">Clear All</button>
+        <div id="ddt_x-selection_buttons">
+            <button type="button" id="ddt_x-select_all_btn" class="ddt_x-button">Select All</button>
+            <button type="button" id="ddt_x-clear_all_btn" class="ddt_x-button">Clear All</button>
+        </div>
         <input type="hidden" name="action" value="mc_backup_tables">
     </fieldset>
     <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
@@ -223,14 +225,14 @@ Although not efficient this is always safe.
 <?php
     if ( $backup_suffix_ok ) {
 ?>
-    <div id="mc_main_buttons">
-        <button id="mc_backup"       class="mc-wpdbdt-btn" type="button"
-            <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>&nbsp;&nbsp;&nbsp;&nbsp;
-        <button id="ddt_x-restore"   class="mc-wpdbdt-btn" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>&nbsp;&nbsp;&nbsp;&nbsp;
-        <button id="ddt_x-delete"    class="mc-wpdbdt-btn" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>&nbsp;&nbsp;&nbsp;&nbsp;
-        <button id="ddt_x-diff_tool" class="mc-wpdbdt-btn" type="button"
+    <div id="ddt_x-main_buttons">
+        <button id="mc_backup"       class="ddt_x-button" type="button"
+            <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>
+        <button id="ddt_x-restore"   class="ddt_x-button" type="button"
+            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>
+        <button id="ddt_x-delete"    class="ddt_x-button" type="button"
+            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>
+        <button id="ddt_x-diff_tool" class="ddt_x-button" type="button"
             <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
     </div>
 <?php

@@ -287,7 +287,7 @@ function ddt_wp_db_diff_init( ) {
                 $options      = ddt_get_options( );
                 $id_for_table = ddt_id_for_table( );
 ?>
-<h2>Database Diff Tool</h2>
+<h2 id="ddt_x-diff_tool_title">Database Diff Tool</h2>
 <button type="button" id="ddt_x-reload_diff" class="ddt_x-button">Refresh</button>
 <?php
                 if ( !$wpdb->get_col( 'SHOW TABLES LIKE \'' . ddt_get_diff_changes_table( ) . '\'' ) ) {
@@ -351,7 +351,7 @@ No database operations have been done on the selected tables.
                 }
                 echo '</tbody></table>';
                 echo '<div id="ddt_x-diff_controls">';
-                echo '<button id="ddt_x-diff_view_changes" class="mc-wpdbdt-btn" type="button" disabled>View Selected</button>';
+                echo '<button id="ddt_x-diff_view_changes" class="ddt_x-button" type="button" disabled>View Selected</button>';
                 echo '<label for="ddt_x-table_width">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Width: </label>';
                 echo '<input type="text" id="ddt_x-table_width" placeholder="e.g. 2000px or 150%" disabled>';
                 echo '<label for="ddt_x-table_cell_size">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Table Cell Max Characters: </label>';

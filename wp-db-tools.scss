@@ -53,15 +53,27 @@ fieldset {
   }
 }
 
-div#mc_main_buttons {
+div#ddt_x-main_buttons {
   padding: 3px 20px;
 }
 
-button.mc-wpdbdt-btn {
+button.ddt_x-button {
+  width: 14em;
+  font-weight: bold;
   border: 2px solid gray;
   border-radius: 7px;
-  padding: 5px 10px;
-  margin: 0px;
+  padding: 3px 3px;
+  margin: 10px 5px;
+}
+
+h2#ddt_x-diff_tool_title {
+  display: inline-block;
+}
+
+button#ddt_x-reload_diff {
+  float: right;
+  margin-top: 20px;
+  margin-right: 20px;
 }
 
 table#ddt_x-op_counts {
