@@ -378,7 +378,7 @@ No database operations have been done on the selected tables.
         add_action( 'admin_enqueue_scripts', function( $hook ) {
             if ( strpos( $hook, DDT_DIFF_PAGE_NAME ) !== FALSE ) {
                 wp_enqueue_style(  'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.css'                         );
-                wp_enqueue_script( 'wp-db-tools',        plugin_dir_url( __FILE__ ) . 'wp-db-tools.js',            [ 'jquery' ] );
+                wp_enqueue_script( 'wp-db-diff',         plugin_dir_url( __FILE__ ) . 'wp-db-diff.js',             [ 'jquery' ] );
                 wp_enqueue_script( 'jquery.tablesorter', plugin_dir_url( __FILE__ ) . 'jquery.tablesorter.min.js', [ 'jquery' ] );
             }
         } );
