@@ -4,11 +4,13 @@ jQuery( document ).ready( function( ) {
     
     jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", true );
+        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", false );
         e.preventDefault( );
     } );
 
     jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", false );
+        jQuery( "div#mc_main_buttons button#mc_backup" ).prop( "disabled", true );
         e.preventDefault( );
     } );
     
