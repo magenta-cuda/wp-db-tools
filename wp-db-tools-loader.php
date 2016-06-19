@@ -53,7 +53,7 @@ EOD;
     # load from inside a function to hide variables from the global scope
     
     require_once( __DIR__  . '/wp-db-backup.php' );
-    if ( ddt_backed_up_tables( ) ) {
+    if ( ddt_in_diff_session( ) ) {
         ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
     }
 }

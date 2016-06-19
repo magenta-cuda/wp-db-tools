@@ -36,12 +36,14 @@ Most useful for repeated testing, i.e. backup table(s), test, restore table(s), 
  
 namespace ddt_x_wp_db_tools {
 
-const DDT_BACKUP_PAGE_NAME = 'ddt_backup_tool';
-const DDT_BACKUP           = 'mc_backup';
-const DDT_SUCCESS          = 'STATUS:SUCCESS';
-const DDT_FAILURE          = 'STATUS:FAILURE';
-const DDT_COLS             = 4;
-const DDT_DELTA            = 256;   # TODO:
+const DDT_BACKUP_PAGE_NAME   = 'ddt_backup_tool';
+const DDT_BACKUP             = 'mc_backup';
+const DDT_RESTORED           = 'ddt_restored';
+const DDT_SUCCESS            = 'STATUS:SUCCESS';
+const DDT_FAILURE            = 'STATUS:FAILURE';
+const DDT_COLS               = 4;
+const DDT_DELTA              = 256;   # TODO:
+const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
 
 function ddt_get_options( $o = NULL ) {
     global $wpdb;
@@ -256,7 +258,16 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
         wp_enqueue_script( 'wp-db-backup', plugin_dir_url( __FILE__ ) . 'wp-db-backup.js', [ 'jquery' ] );
     }
 } );
-    
+
+function ddt_get_diff_changes_table( ) {
+    return DDT_DIFF_CHANGES_TABLE;
+}
+
+function ddt_in_diff_session( ) {
+    global $wpdb;
+    return !!$wpdb->get_col( 'show tables like "' . ddt_get_diff_changes_table( ) . '"' );
+}
+
 function ddt_wp_db_diff_included( $i = NULL ) {
     static $wp_db_diff_included = NULL;
     if ( $i !== NULL ) {
@@ -264,10 +275,6 @@ function ddt_wp_db_diff_included( $i = NULL ) {
     }
     return $wp_db_diff_included;
 }   # function ddt_wp_db_diff_included( $i = NULL ) {
-
-if ( file_exists( __DIR__ . '/wp-db-diff.php' ) && !empty( ddt_get_options( )[ 'ddt_x-enable_diff' ] ) ) {
-    ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
-}
 
 if ( defined( 'DOING_AJAX' ) ) {
 
@@ -306,17 +313,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
 
         $action = 'backup tables';
-        if ( !empty( $_REQUEST[ 'ddt_x-enable_diff' ] ) ) {
-            $options[ 'ddt_x-enable_diff' ] = 'enabled';
-            if ( !ddt_wp_db_diff_included( ) ) {
-                ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
-            }
-        } else {
-            $options[ 'ddt_x-enable_diff' ] = NULL;
-        }
-        \update_option( 'ddt-x-wp_db_tools', $options );
-        ddt_get_options( $options );
-        
         $messages     = [ ];
         # extract only table names from HTTP query parameters
         $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
@@ -351,9 +347,16 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         if ( !in_array( DDT_BACKUP, $tables_to_do ) || $status === DDT_FAILURE ) {
             $messages[ ] = $action . ': ' . $status;
-            if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && ddt_wp_db_diff_included( ) ) {
+            if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+                # start a diff session
+                $options[ 'ddt_x-enable_diff' ] = 'enabled';
+                ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
                 ddt_wp_db_diff_start_session( );
+            } else {
+                $options[ 'ddt_x-enable_diff' ] = NULL;
             }
+            \update_option( 'ddt-x-wp_db_tools', $options );
+            ddt_get_options( $options );
         }
         $messages    = ddt_format_messages( $messages, $action );
         $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
@@ -374,15 +377,23 @@ if ( defined( 'DOING_AJAX' ) ) {
             wp_nonce_ays( '' );
         }
 
-        $action      = 'restore tables';
+        if ( ddt_in_diff_session( ) ) {
+            ddt_wp_db_diff_end_session( );
+        }
+
+        $action           = 'restore tables';
         # get names of tables that have a backup copy
-        $tables      = ddt_backed_up_tables( );
-        $suffix      = ddt_get_options( )[ 'orig_suffix' ];
-        $messages    = [ ];
-        $messages[ ] = $action . ': ' . implode( ', ', $tables );
-        $status      = DDT_SUCCESS;
+        $tables           = ddt_backed_up_tables( );
+        $suffix           = ddt_get_options( )[ 'orig_suffix' ];
+        $messages         = [ ];
+        $messages[ ]      = $action . ': ' . implode( ', ', $tables );
+        $tables_not_to_do = $_REQUEST;
+        $status           = DDT_SUCCESS;
         # restore all tables that have a backup copy
         foreach ( $tables as $table ) {
+            if ( !empty( $_REQUEST[ $table ] ) && $_REQUEST[ $table ] === DDT_RESTORED ) {
+                continue;
+            }
             # drop the table to be restored
             if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
                 # this is not a critical error so we can ignore it
@@ -399,14 +410,33 @@ if ( defined( 'DOING_AJAX' ) ) {
                 $status = DDT_FAILURE;
                 break;
             }
+            $tables_not_to_do[ $table ] = DDT_RESTORED;
+            if ( ( count( $tables_not_to_do ) - count( $_REQUEST ) ) >= DDT_DELTA ) {
+                break;
+            }
         }
-        $messages[ ] = $action . ': ' . $status;
+        if ( !array_diff( $tables, $tables_not_to_do ) || $status === DDT_FAILURE ) {
+            $messages[ ] = $action . ': ' . $status;
+            if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+                # start a diff session
+                $options[ 'ddt_x-enable_diff' ] = 'enabled';
+                ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
+                ddt_wp_db_diff_start_session( );
+            } else {
+                $options[ 'ddt_x-enable_diff' ] = NULL;
+            }
+            \update_option( 'ddt-x-wp_db_tools', $options );
+            ddt_get_options( $options );
+        }
         $messages    = ddt_format_messages( $messages, $action );
-        echo implode( "\n", $messages ) . "\n";
-        if ( ddt_wp_db_diff_included( ) ) {
-            ddt_wp_db_diff_end_session( );
-            ddt_wp_db_diff_start_session( );
+        $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
+        error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
+        if ( $status === DDT_SUCCESS ) {
+        #    wp_send_json_success( $data );
+        } else {
+        #    wp_send_json_error( $data );
         }
+        echo implode( "\n", $messages ) . "\n";
         exit( );
     } );   # add_action( 'wp_ajax_mc_restore_tables', function( ) {
 
@@ -416,6 +446,11 @@ if ( defined( 'DOING_AJAX' ) ) {
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
+
+        if ( ddt_in_diff_session( ) ) {
+            ddt_wp_db_diff_end_session( );
+        }
+        
         $action   = 'delete tables';
         $suffix   = ddt_get_options( )[ 'orig_suffix' ];
         $tables   = ddt_backed_up_tables( );
@@ -436,9 +471,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
         echo implode( "\n", $messages ) . "\n";
-        if ( ddt_wp_db_diff_included( ) ) {
-            ddt_wp_db_diff_end_session( );
-        }
         exit( );
     } );   # add_action( 'wp_ajax_mc_delete_backup', function( ) {
         

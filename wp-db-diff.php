@@ -39,12 +39,7 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
  
 namespace ddt_x_wp_db_tools {
 
-const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
 const DDT_DIFF_PAGE_NAME     = 'ddt_diff_tool';
-
-function ddt_get_diff_changes_table( ) {
-    return DDT_DIFF_CHANGES_TABLE;
-}
 
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
