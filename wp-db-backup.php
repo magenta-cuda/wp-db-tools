@@ -256,6 +256,7 @@ add_action( 'admin_enqueue_scripts', function( $hook ) {
     if ( strpos( $hook, DDT_BACKUP_PAGE_NAME ) !== FALSE ) {
         wp_enqueue_style(  'wp-db-tools',  plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
         wp_enqueue_script( 'wp-db-backup', plugin_dir_url( __FILE__ ) . 'wp-db-backup.js', [ 'jquery' ] );
+        wp_localize_script( 'wp-db-backup', 'ddt_xPhpData', [ 'DDT_SUCCESS' => DDT_SUCCESS ] );
     }
 } );
 
@@ -415,7 +416,7 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
         }
-        if ( !array_diff( $tables, $tables_not_to_do ) || $status === DDT_FAILURE ) {
+        if ( !array_diff( $tables, array_keys( $tables_not_to_do, DDT_RESTORED, TRUE ) ) || $status === DDT_FAILURE ) {
             $messages[ ] = $action . ': ' . $status;
             if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
                 # start a diff session
@@ -429,15 +430,15 @@ if ( defined( 'DOING_AJAX' ) ) {
             ddt_get_options( $options );
         }
         $messages    = ddt_format_messages( $messages, $action );
-        $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
+        $data = [ 'messages' => $messages, 'tables_not_to_do' => $tables_not_to_do ];
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
         if ( $status === DDT_SUCCESS ) {
-        #    wp_send_json_success( $data );
+            wp_send_json_success( $data );
         } else {
-        #    wp_send_json_error( $data );
+            wp_send_json_error( $data );
         }
-        echo implode( "\n", $messages ) . "\n";
-        exit( );
+        #echo implode( "\n", $messages ) . "\n";
+        #exit( );
     } );   # add_action( 'wp_ajax_mc_restore_tables', function( ) {
 
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action

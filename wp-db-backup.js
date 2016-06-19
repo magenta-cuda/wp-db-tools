@@ -1,4 +1,6 @@
 jQuery( document ).ready( function( ) {
+  
+    var workingText = "working...\n";
 
     // convenience buttons to select or clear all checkboxes
     
@@ -33,23 +35,25 @@ jQuery( document ).ready( function( ) {
     function backupTables( data ) {
         var log = jQuery( "#mc_status" );
         var text = log.text( );
-        log.text( text + "working...\n" );
+        log.text( text + workingText );
         // invoke the AJAX action wp_ajax_mc_backup_tables
         jQuery.post( ajaxurl, data, function ( response ) {
             console.log( response );
             console.log( response.data.messages );
-            var text = "";
+            var text = log.text( );
             response.data.messages.forEach( function( message ) {
                 text += message + "\n";
             } );
-            jQuery( "#mc_status" ).html( text );
-            if ( text.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
+            log.text( text );
+            if ( text.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
                 jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
                 jQuery( "div#ddt_x-main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
                 jQuery( "div#ddt_x-main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
                 jQuery( "fieldset#ddt_x-table_fields"                               ).prop( "disabled", true  );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix"    ).prop( "disabled", true  );
                 jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"      ).prop( "disabled", true  );
+            } else {
+                backupTables( response.data.tables_to_do );
             }
         } );
     }
@@ -65,12 +69,29 @@ jQuery( document ).ready( function( ) {
     
     // Restore from backup
     
-    jQuery( "button.ddt_x-button#ddt_x-restore" ).click( function( e ) {
-        var nonce = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery( "#mc_status" ).html( "working..." );
-        jQuery.post( ajaxurl, { action: "mc_restore_tables", 'ddt_x-nonce': nonce }, function ( response ) {
-            jQuery( "#mc_status" ).html( response );
+    function restoreTables( data ) {
+        var log = jQuery( "#mc_status" );
+        var text = log.text( );
+        log.text( text + workingText );
+        // invoke the AJAX action wp_ajax_mc_restore_tables
+        jQuery.post( ajaxurl, data, function ( response ) {
+            console.log( response );
+            console.log( response.data.messages );
+            var text = log.text( );
+            response.data.messages.forEach( function( message ) {
+                text += message + "\n";
+            } );
+            log.text( text );
+            if ( text.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
+            } else {
+                restoreTables( response.data.tables_not_to_do );
+            }
         } );
+    }
+    
+    jQuery( "button.ddt_x-button#ddt_x-restore" ).click( function( e ) {
+        jQuery( "#mc_status" ).text( "" );
+        restoreTables( { action: "mc_restore_tables", 'ddt_x-nonce': jQuery( "input#ddt_x-nonce" ).val( ) } );
     } );
     
     // Delete backup
@@ -78,10 +99,10 @@ jQuery( document ).ready( function( ) {
     jQuery( "button.ddt_x-button#ddt_x-delete" ).click( function( e ) {
         var button = this;
         var nonce  = jQuery( "input#ddt_x-nonce" ).val( );
-        jQuery( "#mc_status" ).html( "working..." );
+        jQuery( "#mc_status" ).text( workingText );
         jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': nonce }, function ( response ) {
-            jQuery( "#mc_status" ).html( response );
-            if ( response.indexOf( "<?php echo DDT_SUCCESS; ?>" ) ) {
+            jQuery( "#mc_status" ).text( response );
+            if ( response.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
                 button.disabled = true;
                 jQuery( "div#ddt_x-main_buttons button#mc_backup"                   ).prop( "disabled", false );
                 jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );
