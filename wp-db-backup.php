@@ -119,7 +119,7 @@ function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tabl
     return TRUE;
 }   # function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
 
-function ddt_add_main_menu( ) {
+function ddt_emit_backup_page( ) {
     global $wpdb;
     $options = ddt_get_options( );
 ?>
@@ -198,23 +198,6 @@ EOD;
     The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
     <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
     </div>
-    <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
-        <legend>Options</legend>
-        <label for="ddt_x-backup_suffix">Backup Suffix: </label>
-        <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20"
-            <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
-        <button id="mc_suffix_verify" type="button">Verify</button>
-<?php
-    if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
-?>
-        <label for="ddt_x-enable_diff">&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;Enable Diff: </label>
-        <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled"
-            <?php if ( !empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' checked'; } ?><?php if ( $backup_tables ) { echo ' disabled'; } ?>>
-        <input type="hidden" name="ddt_x-nonce" id="ddt_x-nonce" value="<?php echo wp_create_nonce( 'ddt_x-from_backup' ); ?>">
-<?php
-    }
-?>
-    </fieldset>
     <fieldset id="ddt_x-important_messages" class="mc_db_tools_pane">
         <legend>Important</legend>
 It is very important that you select all the tables that may be changed.
@@ -222,6 +205,33 @@ Otherwise when you restore the tables you may be left with an inconsistent datab
 You should always have a real backup just in case you inadvertantly omit a required table.
 If you are not sure about which tables will be changed you should select all tables.
 Although not efficient this is always safe.
+    </fieldset>
+    <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
+        <legend>Options</legend>
+        <div class="ddt_x-option_box">
+            <div class="ddt_x-option_comment">
+The backup tables will be named by concatenating the original table name with the backup suffix. It is important that no existing table have a name ending in this suffix.
+            </div>
+            <label for="ddt_x-backup_suffix">Backup Suffix: </label>
+            <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20"
+                <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
+            <button id="mc_suffix_verify" type="button">Verify</button><br>
+        </div>
+<?php
+    if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+?>
+        <div class="ddt_x-option_box">
+            <div class="ddt_x-option_comment">
+To monitor the backed up tables for changes you must enable the Diff Tool.
+            </div>
+            <label for="ddt_x-enable_diff">Enable Diff Tool: </label>
+            <input type="checkbox" name="ddt_x-enable_diff" id="ddt_x-enable_diff" value="enabled"
+                <?php if ( !empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' checked'; } ?><?php if ( $backup_tables ) { echo ' disabled'; } ?>>
+        </div>
+        <input type="hidden" name="ddt_x-nonce" id="ddt_x-nonce" value="<?php echo wp_create_nonce( 'ddt_x-from_backup' ); ?>">
+<?php
+    }
+?>
     </fieldset>
     </form>
 <?php
@@ -246,10 +256,10 @@ Although not efficient this is always safe.
     </fieldset>
 </div>
 <?php
-}   # function ddt_add_main_menu( ) {
+}   # function ddt_emit_backup_page( ) {
         
 add_action( 'admin_menu', function( ) {
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
+    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_emit_backup_page' );
 } );   # add_action( 'admin_menu', function( ) {
 
 add_action( 'admin_enqueue_scripts', function( $hook ) {

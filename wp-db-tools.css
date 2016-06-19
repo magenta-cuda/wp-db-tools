@@ -33,6 +33,11 @@ fieldset#ddt_x-table_fields table.ddt_x-table_table td.mc_table_td {
 fieldset#ddt_x-important_messages {
   border: 2px solid red; }
 
+div.ddt_x-option_box {
+  padding: 10px 10px; }
+  div.ddt_x-option_box div.ddt_x-option_comment {
+    padding-bottom: 5px; }
+
 div#ddt_x-main_buttons {
   padding: 3px 20px; }
 

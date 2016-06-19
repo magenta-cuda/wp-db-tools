@@ -274,7 +274,7 @@ function ddt_wp_db_diff_init( ) {
     if ( !defined( 'DOING_AJAX' ) ) {
         
         add_action( 'admin_menu', function( ) {
-            add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_add_main_menu' );
+            add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Backup Tool', 'Backup Tool', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_emit_backup_page' );
             # export?
             add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', DDT_DIFF_PAGE_NAME, function( ) {
                 global $wpdb;
