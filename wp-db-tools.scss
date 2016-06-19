@@ -58,6 +58,14 @@ div.ddt_x-option_box {
   div.ddt_x-option_comment {
     padding-bottom:5px;
   }
+  input#ddt_x-backup_suffix {
+    &.ddt_x-verified {
+      color: limegreen;
+    }
+    &.ddt_x-unverified {
+      color: red;
+    }
+  }
 }
 
 div#ddt_x-main_buttons {

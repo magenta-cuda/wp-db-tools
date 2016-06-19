@@ -54,8 +54,8 @@ function ddt_get_options( $o = NULL ) {
     } else if ( $options === NULL ) {
         $options = \get_option( 'ddt-x-wp_db_tools', [
             'ddt_x-version'          => '2.0',
-            'orig_suffix'            => '_ddt_x_1113',   # TODO: replace with ddt_x-orig_suffix for consistency
             'ddt_x-orig_suffix'      => '_ddt_x_1113',
+            'ddt_x-suffix_verified'  => FALSE,
             'ddt_x-enable_diff'      => 'enabled',
             'ddt_x-table_width'      => [ ],
             'ddt_x-table_cell_size'  => [ ],
@@ -72,7 +72,7 @@ function ddt_get_options( $o = NULL ) {
 
 function ddt_get_backup_tables( &$orig_tables = NULL ) {
     global $wpdb;
-    $suffix = ddt_get_options( )[ 'orig_suffix' ];
+    $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
     # extract only table names with the backup suffix and remove the backup suffix
     $tables     = $wpdb->get_col( "show tables" );
     $suffix_len = strlen( $suffix );
@@ -128,7 +128,7 @@ function ddt_emit_backup_page( ) {
     # get names of all tables in database
     $tables     = $wpdb->get_col( "show tables" );
     # remove names of backup tables
-    $suffix     = $options[ 'orig_suffix' ];
+    $suffix     = $options[ 'ddt_x-orig_suffix' ];
     $suffix_len = strlen( $suffix );
     $tables     = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
         return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
@@ -194,10 +194,6 @@ EOD;
         </div>
         <input type="hidden" name="action" value="mc_backup_tables">
     </fieldset>
-    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
-    The backup suffix &quot;<?php echo $options[ 'orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
-    <?php echo "{$bad_table}{$options['orig_suffix']}"; ?>&quot;. Please use another suffix.
-    </div>
     <fieldset id="ddt_x-important_messages" class="mc_db_tools_pane">
         <legend>Important</legend>
 It is very important that you select all the tables that may be changed.
@@ -213,9 +209,9 @@ Although not efficient this is always safe.
 The backup tables will be named by concatenating the original table name with the backup suffix. It is important that no existing table have a name ending in this suffix.
             </div>
             <label for="ddt_x-backup_suffix">Backup Suffix: </label>
-            <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20"
-                <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
-            <button id="mc_suffix_verify" type="button">Verify</button><br>
+            <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" class="<?php echo $options[ 'ddt_x-suffix_verified' ] ? 'ddt_x-verified' : 'ddt_x-unverified' ?>"
+                value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20" <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
+            <button id="mc_suffix_verify" type="button">Verify</button>
         </div>
 <?php
     if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
@@ -230,9 +226,13 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
         </div>
         <input type="hidden" name="ddt_x-nonce" id="ddt_x-nonce" value="<?php echo wp_create_nonce( 'ddt_x-from_backup' ); ?>">
 <?php
-    }
+    }   # if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
     </fieldset>
+    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
+    The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
+    <?php echo "{$bad_table}{$options['ddt_x-orig_suffix']}"; ?>&quot;. Please use another suffix.
+    </div>
     </form>
 <?php
     if ( $backup_suffix_ok ) {
@@ -329,7 +329,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
             return $value === DDT_BACKUP;
         } ) );
-        $suffix       = $options[ 'orig_suffix' ];
+        $suffix       = $options[ 'ddt_x-orig_suffix' ];
         $messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
         error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables=' . print_r( $tables, true ) );
@@ -395,7 +395,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         $action           = 'restore tables';
         # get names of tables that have a backup copy
         $tables           = ddt_backed_up_tables( );
-        $suffix           = ddt_get_options( )[ 'orig_suffix' ];
+        $suffix           = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
         $messages         = [ ];
         $messages[ ]      = $action . ': ' . implode( ', ', $tables );
         $tables_not_to_do = $_REQUEST;
@@ -463,7 +463,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         
         $action   = 'delete tables';
-        $suffix   = ddt_get_options( )[ 'orig_suffix' ];
+        $suffix   = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
         $tables   = ddt_backed_up_tables( );
         $messages = [ ];
         if ( $tables ) {
@@ -494,7 +494,8 @@ if ( defined( 'DOING_AJAX' ) ) {
 
         $suffix = $_POST[ 'backup_suffix' ];
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
-            $options[ 'ddt_x-orig_suffix' ] = $options[ 'orig_suffix' ] = $suffix;
+            $options[ 'ddt_x-orig_suffix' ]     = $suffix;
+            $options[ 'ddt_x-suffix_verified' ] = TRUE;
             \update_option( 'ddt-x-wp_db_tools', $options );
             ddt_get_options( $options );
         }   

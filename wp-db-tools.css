@@ -37,6 +37,10 @@ div.ddt_x-option_box {
   padding: 10px 10px; }
   div.ddt_x-option_box div.ddt_x-option_comment {
     padding-bottom: 5px; }
+  div.ddt_x-option_box input#ddt_x-backup_suffix.ddt_x-verified {
+    color: limegreen; }
+  div.ddt_x-option_box input#ddt_x-backup_suffix.ddt_x-unverified {
+    color: red; }
 
 div#ddt_x-main_buttons {
   padding: 3px 20px; }
