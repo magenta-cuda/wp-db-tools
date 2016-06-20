@@ -70,9 +70,11 @@ function ddt_get_options( $o = NULL ) {
 
 # The argument $orig_tables must be set to an array for ddt_get_backup_tables() to return the original table names
 
-function ddt_get_backup_tables( &$orig_tables = NULL ) {
+function ddt_get_backup_tables( &$orig_tables = NULL, $suffix = NULL ) {
     global $wpdb;
-    $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
+    if ( $suffix === NULL ) {
+        $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
+    }
     # extract only table names with the backup suffix and remove the backup suffix
     $tables     = $wpdb->get_col( "show tables" );
     $suffix_len = strlen( $suffix );
@@ -104,10 +106,10 @@ function ddt_backed_up_tables( ) {
 
 # ddt_check_backup_suffix() verifies that no existing table already has the backup suffix
 
-function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL ) {
+function ddt_check_backup_suffix( &$bad_table, $backup_tables = NULL, $orig_tables = NULL, $suffix = NULL ) {
     if ( $backup_tables === NULL || $orig_tables === NULL ) {
         $orig_tables   = [ ];
-        $backup_tables = ddt_get_backup_tables( $orig_tables );
+        $backup_tables = ddt_get_backup_tables( $orig_tables, $suffix );
     }
     $bad_table = NULL;
     foreach ( $backup_tables as $table ) {
@@ -493,7 +495,9 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
 
         $suffix = $_POST[ 'backup_suffix' ];
+        error_log( 'ACTION:wp_ajax_mc_check_backup_suffix():$suffix=' . $suffix );
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
+            error_log( 'ACTION:wp_ajax_mc_check_backup_suffix():$backup_suffix_ok=' . print_r( $backup_suffix_ok, true ) );
             $options[ 'ddt_x-orig_suffix' ]     = $suffix;
             $options[ 'ddt_x-suffix_verified' ] = TRUE;
             \update_option( 'ddt-x-wp_db_tools', $options );
