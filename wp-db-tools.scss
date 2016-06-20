@@ -37,15 +37,18 @@ div.mc_db_tools_pane {
   border: 2px solid black;
   margin: 20px;
   padding: 20px;
-
-  &#mc_db_tools_error_pane {
-    border: 2px solid red;
-  }
 }
 
 fieldset {
   &#ddt_x-table_fields table.ddt_x-table_table td.mc_table_td {
     padding: 5px 20px;
+  }
+
+  div#mc_db_tools_error_pane {
+    font-weight: bold;
+    padding: 10px 20px;
+    border: 2px solid red;
+    margin: 5px 10px;
   }
 
   &#ddt_x-important_messages {

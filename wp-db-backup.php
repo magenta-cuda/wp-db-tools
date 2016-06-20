@@ -215,6 +215,10 @@ The backup tables will be named by concatenating the original table name with th
                 value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20" <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
             <button id="mc_suffix_verify" type="button">Verify</button>
         </div>
+        <div id="mc_db_tools_error_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
+        The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
+        <?php echo "{$bad_table}{$options['ddt_x-orig_suffix']}"; ?>&quot;. Please use another suffix.
+        </div>
 <?php
     if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
@@ -231,10 +235,6 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
     }   # if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
 ?>
     </fieldset>
-    <div id="mc_db_tools_error_pane" class="mc_db_tools_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
-    The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
-    <?php echo "{$bad_table}{$options['ddt_x-orig_suffix']}"; ?>&quot;. Please use another suffix.
-    </div>
     </form>
 <?php
     if ( $backup_suffix_ok ) {

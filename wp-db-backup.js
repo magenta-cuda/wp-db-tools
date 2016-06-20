@@ -57,7 +57,13 @@ jQuery( document ).ready( function( ) {
             }
         } );
     }
+
     jQuery( "button.ddt_x-button#mc_backup" ).click( function( e ) {
+        var suffix = jQuery( "input#ddt_x-backup_suffix" );
+        if ( !suffix.val( ) || !suffix.hasClass( "ddt_x-verified" ) ) {
+            alert( "You must verify the backup suffix before doing a backup." );
+            return false;
+        }
         var button = this;
         button.disabled = true;
         jQuery( "#mc_status" ).text( "" );
@@ -122,13 +128,30 @@ jQuery( document ).ready( function( ) {
     
     // Verify backup suffix on change and CR keydown events
     
-    jQuery( "input#ddt_x-backup_suffix" ).change( function( e ) {
+    jQuery( "input#ddt_x-backup_suffix" )
+        .change( function( e ) {
+            jQuery(this).removeClass("ddt_x-verified").addClass("ddt_x-unverified");
+            return false;
+        } )
+        .keydown( function( e ) {
+            // intercept CR since it triggers submit on form elements
+            if ( e.keyCode === 13 ) {
+                return false;
+            }
+        } );
+
+    // Also verify backup suffix on click of the Verify button
+    
+    jQuery( "button#mc_suffix_verify" ).click( function( e ) {
+        var suffix = jQuery( "input#ddt_x-backup_suffix" ).val( );
+        if ( !suffix ) {
+            return false;
+        }
         var table_pane   = jQuery( "fieldset#ddt_x-table_fields" );
         var error_pane   = jQuery( "div#mc_db_tools_error_pane" );
         var main_buttons = jQuery( "div#ddt_x-main_buttons" );
         var nonce        = jQuery( "input#ddt_x-nonce" ).val( );
         error_pane.text( "checking backup suffix..." ).show( );
-        var suffix = this.value;
         jQuery.post( ajaxurl, { action: "mc_check_backup_suffix", backup_suffix: suffix, 'ddt_x-nonce': nonce }, function( response ) {
             var result = JSON.parse( response );
             error_pane.text( result.backup_suffix_ok ? "\"" + suffix + "\" accepted as the backup suffix.  Reloading ..."
@@ -145,18 +168,5 @@ jQuery( document ).ready( function( ) {
             }
         } );
         return false;
-    } ).keydown( function( e ) {
-        // intercept CR since it triggers submit on form elements
-        if ( e.keyCode === 13 ) {
-            // force change event on CR
-            jQuery(this).change( );
-            return false;
-        }
-    } );
-
-    // Also verify backup suffix on click of the Verify button
-    
-    jQuery( "button#mc_suffix_verify" ).click( function( e ) {
-        jQuery( "input#ddt_x-backup_suffix" ).change( );
     } );
 } );
