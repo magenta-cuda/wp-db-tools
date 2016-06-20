@@ -6,20 +6,20 @@ jQuery( document ).ready( function( ) {
     
     jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", true );
-        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", false );
+        jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", false );
         e.preventDefault( );
     } );
 
     jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
         jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", false );
-        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", true );
+        jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", true );
         e.preventDefault( );
     } );
     
     // enable backup button only if a table is selected
     
     jQuery( "input.ddt_x-table_checkbox[type='checkbox']" ).change( function( e ) {
-        jQuery( "div#ddt_x-main_buttons button#mc_backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
+        jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
     } );
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements
@@ -46,26 +46,28 @@ jQuery( document ).ready( function( ) {
             } );
             log.text( text );
             if ( text.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
-                jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", false );
-                jQuery( "div#ddt_x-main_buttons button#ddt_x-delete"                ).prop( "disabled", false );
-                jQuery( "div#ddt_x-main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", false );
-                jQuery( "fieldset#ddt_x-table_fields"                               ).prop( "disabled", true  );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix"    ).prop( "disabled", true  );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"      ).prop( "disabled", true  );
+                var buttons = jQuery( "div#ddt_x-main_buttons" );
+                buttons.find( "button#ddt_x-restore"       ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-delete"        ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", false );
+                jQuery( "fieldset#ddt_x-table_fields"      ).prop( "disabled", true  );
+                var options = jQuery( "fieldset#mc_db_tools_options" );
+                options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", true  );
+                options.find( "button#ddt_x-suffix_verify" ).prop( "disabled", true  );
+                options.find( "input#ddt_x-enable_diff"    ).prop( "disabled", true  );
             } else {
                 backupTables( response.data.tables_to_do );
             }
         } );
     }
 
-    jQuery( "button.ddt_x-button#mc_backup" ).click( function( e ) {
+    jQuery( "button.ddt_x-button#ddt_x-backup" ).click( function( e ) {
         var suffix = jQuery( "input#ddt_x-backup_suffix" );
         if ( !suffix.val( ) || !suffix.hasClass( "ddt_x-verified" ) ) {
             alert( "You must verify the backup suffix before doing a backup." );
             return false;
         }
-        var button = this;
-        button.disabled = true;
+        this.disabled = true;
         jQuery( "#mc_status" ).text( "" );
         // data will contain the names and values of checked HTML input elements of the form with action = 'mc_backup_tables'
         var data = jQuery( "form#ddt_x-tables" ).serialize( );
@@ -103,19 +105,20 @@ jQuery( document ).ready( function( ) {
     // Delete backup
     
     jQuery( "button.ddt_x-button#ddt_x-delete" ).click( function( e ) {
-        var button = this;
-        var nonce  = jQuery( "input#ddt_x-nonce" ).val( );
+        this.disabled = true;
         jQuery( "#mc_status" ).text( workingText );
-        jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': nonce }, function ( response ) {
+        jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': jQuery( "input#ddt_x-nonce" ).val( ) }, function ( response ) {
             jQuery( "#mc_status" ).text( response );
             if ( response.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
-                button.disabled = true;
-                jQuery( "div#ddt_x-main_buttons button#mc_backup"                   ).prop( "disabled", false );
-                jQuery( "div#ddt_x-main_buttons button#ddt_x-restore"               ).prop( "disabled", true  );
-                jQuery( "div#ddt_x-main_buttons button#ddt_x-diff_tool"             ).prop( "disabled", true  );
-                jQuery( "fieldset#ddt_x-table_fields"                               ).prop( "disabled", false );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-backup_suffix"    ).prop( "disabled", false );
-                jQuery( "fieldset#mc_db_tools_options input#ddt_x-enable_diff"      ).prop( "disabled", false );
+                var buttons = jQuery( "div#ddt_x-main_buttons" );
+                buttons.find( "button#ddt_x-backup"        ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-restore"       ).prop( "disabled", true  );
+                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", true  );
+                jQuery( "fieldset#ddt_x-table_fields"      ).prop( "disabled", false );
+                var options = jQuery( "fieldset#mc_db_tools_options" );
+                options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", false );
+                options.find( "button#ddt_x-suffix_verify" ).prop( "disabled", false );
+                options.find( "input#ddt_x-enable_diff"    ).prop( "disabled", false );
             }
         } );
     } );
@@ -140,9 +143,9 @@ jQuery( document ).ready( function( ) {
             }
         } );
 
-    // Also verify backup suffix on click of the Verify button
+    // Verify backup suffix on click of the Verify button
     
-    jQuery( "button#mc_suffix_verify" ).click( function( e ) {
+    jQuery( "button#ddt_x-suffix_verify" ).click( function( e ) {
         var suffix = jQuery( "input#ddt_x-backup_suffix" ).val( );
         if ( !suffix ) {
             return false;

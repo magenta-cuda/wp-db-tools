@@ -212,8 +212,8 @@ The backup tables will be named by concatenating the original table name with th
             </div>
             <label for="ddt_x-backup_suffix">Backup Suffix: </label>
             <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" class="<?php echo $options[ 'ddt_x-suffix_verified' ] ? 'ddt_x-verified' : 'ddt_x-unverified' ?>"
-                value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20" <?php if ( $backup_tables ) { echo ' disabled'; } ?>>
-            <button id="mc_suffix_verify" type="button">Verify</button>
+                value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>
+            <button id="ddt_x-suffix_verify" type="button"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>Verify</button>
         </div>
         <div id="mc_db_tools_error_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
         The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
@@ -240,14 +240,10 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
     if ( $backup_suffix_ok ) {
 ?>
     <div id="ddt_x-main_buttons">
-        <button id="mc_backup"       class="ddt_x-button" type="button"
-            <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>
-        <button id="ddt_x-restore"   class="ddt_x-button" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>
-        <button id="ddt_x-delete"    class="ddt_x-button" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>
-        <button id="ddt_x-diff_tool" class="ddt_x-button" type="button"
-            <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
+        <button id="ddt_x-backup"    class="ddt_x-button" type="button" <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>
+        <button id="ddt_x-restore"   class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>
+        <button id="ddt_x-delete"    class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>
+        <button id="ddt_x-diff_tool" class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
     </div>
 <?php
     }
