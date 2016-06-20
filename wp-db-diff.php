@@ -45,11 +45,13 @@ function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
     $wpdb->query( 'CREATE TABLE ' . ddt_get_diff_changes_table( ) .
                   ' ( cid INT NOT NULL AUTO_INCREMENT, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
+    ddt_disable_query_filter( FALSE );    
 }   # function ddt_wp_db_diff_start_session( ) {
 
 
 function ddt_wp_db_diff_end_session( ) {
     global $wpdb;
+    ddt_disable_query_filter( TRUE );    
     $wpdb->query( 'DROP TABLE ' . ddt_get_diff_changes_table( ) );
 }   # function ddt_wp_db_diff_end_session( ) {
 
@@ -149,11 +151,24 @@ function ddt_wp_db_diff_init( ) {
     }
     ddt_id_for_table( $id_for_table );
 
+    function ddt_disable_query_filter( $v = NULL ) {
+        static $disable_query_filter = FALSE;
+        if ( $v !== NULL ) {
+            $disable_query_filter = $v;
+        }
+        return $disable_query_filter;
+    }
+
     function ddt_post_query( ) {
         global $wpdb;
 
+        if ( ddt_disable_query_filter( ) ) {
+            return;
+        }
+        
         $options          = ddt_get_options( );
         $backed_up_tables = ddt_backed_up_tables( );
+        error_log( 'ddt_post_query():$backed_up_tables=' . print_r( $backed_up_tables, true ) );
         $id_for_table     = ddt_id_for_table( );
 
         static $regex_of_tables_orig = NULL;
@@ -170,6 +185,8 @@ function ddt_wp_db_diff_init( ) {
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
+            error_log( 'ddt_post_query():$regex_of_tables_orig=' . $regex_of_tables_orig );
+            error_log( 'ddt_post_query():$last_query=' . $last_query );
             if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
