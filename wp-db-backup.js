@@ -25,9 +25,6 @@ jQuery( document ).ready( function( ) {
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements
     jQuery( "form#ddt_x-tables" ).submit( function( e ) {
-        console.log( "submit:", e );
-        // TODO: e.preventDefault() vs return false;
-        //e.preventDefault();
         return false;
     } );
 
@@ -39,8 +36,6 @@ jQuery( document ).ready( function( ) {
         log.text( text + workingText );
         // invoke the AJAX action wp_ajax_mc_backup_tables
         jQuery.post( ajaxurl, data, function ( response ) {
-            console.log( response );
-            console.log( response.data.messages );
             var text = log.text( );
             response.data.messages.forEach( function( message ) {
                 text += message + "\n";
@@ -84,8 +79,6 @@ jQuery( document ).ready( function( ) {
         log.text( text + workingText );
         // invoke the AJAX action wp_ajax_mc_restore_tables
         jQuery.post( ajaxurl, data, function ( response ) {
-            console.log( response );
-            console.log( response.data.messages );
             var text = log.text( );
             response.data.messages.forEach( function( message ) {
                 text += message + "\n";

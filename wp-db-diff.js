@@ -79,7 +79,6 @@ jQuery( document ).ready( function( ) {
                 var regEx   = /(^|,\s)(\d+)\(\w+\)/g;
                 var matches;
                 while ( (matches = regEx.exec( ems_xii_diff_options.sort_order ) ) !== null ) {
-                    console.log( "matches=", matches );
                     sortList.push( [ matches[ 2 ], 0 ] );
                 }
             }
@@ -194,9 +193,6 @@ jQuery( document ).ready( function( ) {
             }
             table.tablesorter( sorterOptions );
             table.find( "th.tablesorter-header" ).mouseup( function( e ) {
-                console.log( this.dataset.column );
-                console.log( jQuery( this ).text( ) );
-                console.log( e.shiftKey );
                 // remember the order of the sort keys
                 var checked = jQuery( "table#ddt_x-op_counts tbody td input[type='checkbox']:checked" );
                 var table   = jQuery( checked[0].parentNode.parentNode ).find( "td" ).first( ).text( );
