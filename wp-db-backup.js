@@ -1,7 +1,7 @@
 jQuery( document ).ready( function( ) {
   
     //var workingText = "working...\n";
-    var workingText = "\n";
+    var workingText = "";
 
     // convenience buttons to select or clear all checkboxes
     

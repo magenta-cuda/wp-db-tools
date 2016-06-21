@@ -459,11 +459,11 @@ if ( defined( 'DOING_AJAX' ) ) {
         $suffix   = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
         $tables   = ddt_backed_up_tables( );
         $messages = [ ];
-        if ( $tables ) {
-            $messages[ ] = $action . ': ' . implode(  $suffix . ', ', $tables ) . $suffix;
-        } else {
-            $messages[ ] = $action . ': ';
-        }
+        #if ( $tables ) {
+        #    $messages[ ] = $action . ': ' . implode(  $suffix . ', ', $tables ) . $suffix;
+        #} else {
+        #    $messages[ ] = $action . ': ';
+        #}
         $status = DDT_SUCCESS;
         foreach ( $tables as $table ) {
             # drop the backup table

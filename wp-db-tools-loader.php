@@ -29,8 +29,6 @@ License:     GPL2
 
 namespace ddt_x_wp_db_tools {
 
-error_log( 'wp-db-tools-loader.php:backtrace=' . print_r( debug_backtrace( DEBUG_BACKTRACE_IGNORE_ARGS ), true ) );
-
 function ddt_wp_db_tools_init( ) {
     # The check for version is in its own file since if the file contains PHP 5.4 code an ugly fatal error will be triggered instead
 

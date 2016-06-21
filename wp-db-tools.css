@@ -20,6 +20,8 @@ fieldset.mc_db_tools_pane {
   border: 2px solid black;
   margin: 20px;
   padding: 20px; }
+  fieldset.mc_db_tools_pane#mc_db_tools_log {
+    padding: 10px 30px; }
 
 div.mc_db_tools_pane {
   border: 2px solid black;
