@@ -212,7 +212,7 @@ The backup tables will be named by concatenating the original table name with th
             <label for="ddt_x-backup_suffix">Backup Suffix: </label>
             <input type="text" name="ddt_x-backup_suffix" id="ddt_x-backup_suffix" class="<?php echo $options[ 'ddt_x-suffix_verified' ] ? 'ddt_x-verified' : 'ddt_x-unverified' ?>"
                 value="<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>" size="20"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>
-            <button id="ddt_x-suffix_verify" type="button"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>Verify</button>
+            <button type="button" id="ddt_x-suffix_verify" class="ddt_x-button"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>Verify</button>
         </div>
         <div id="mc_db_tools_error_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
         The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
@@ -314,8 +314,6 @@ if ( defined( 'DOING_AJAX' ) ) {
     add_action( 'wp_ajax_mc_backup_tables', function( ) {
         $options = ddt_get_options( );
 
-        error_log( 'ACTION:wp_ajax_mc_backup_tables():$_REQUEST=' . print_r( $_REQUEST, true ) );
-
         if ( !\wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             \wp_nonce_ays( '' );
         }
@@ -329,8 +327,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         $suffix       = $options[ 'ddt_x-orig_suffix' ];
         $messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
-        error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables=' . print_r( $tables, true ) );
-        error_log( 'ACTION:wp_ajax_mc_backup_tables():$tables_to_do=' . print_r( $tables_to_do, true ) );
         $status       = DDT_SUCCESS;
         foreach ( $tables as $table ) {
             # rename original table to use as backup
@@ -367,11 +363,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 \update_option( 'ddt-x-wp_db_tools', $options );
                 ddt_get_options( $options );
             }
-            error_log( 'ACTION:wp_ajax_mc_backup_tables():$options=' . print_r( $options, true ) );
         }
         $messages    = ddt_format_messages( $messages, $action );
         $data = [ 'messages' => $messages, 'tables_to_do' => $tables_to_do ];
-        error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
         if ( $status === DDT_SUCCESS ) {
             wp_send_json_success( $data );
         } else {
@@ -442,11 +436,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 \update_option( 'ddt-x-wp_db_tools', $options );
                 ddt_get_options( $options );
             }
-            error_log( 'ACTION:wp_ajax_mc_restore_tables():$options=' . print_r( $options, true ) );
         }
         $messages    = ddt_format_messages( $messages, $action );
         $data = [ 'messages' => $messages, 'tables_not_to_do' => $tables_not_to_do ];
-        error_log( 'ACTION:wp_ajax_mc_backup_tables():$data=' . print_r( $data, true ) );
         if ( $status === DDT_SUCCESS ) {
             wp_send_json_success( $data );
         } else {
@@ -498,14 +490,13 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
 
         $suffix = $_POST[ 'backup_suffix' ];
-        error_log( 'ACTION:wp_ajax_mc_check_backup_suffix():$suffix=' . $suffix );
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
-            error_log( 'ACTION:wp_ajax_mc_check_backup_suffix():$backup_suffix_ok=' . print_r( $backup_suffix_ok, true ) );
             $options[ 'ddt_x-orig_suffix' ]     = $suffix;
             $options[ 'ddt_x-suffix_verified' ] = TRUE;
             \update_option( 'ddt-x-wp_db_tools', $options );
             ddt_get_options( $options );
-        }   
+        }
+
         $result = json_encode( [ 'backup_suffix_ok' => $backup_suffix_ok, 'bad_table' => ( $bad_table ? $bad_table . $suffix : NULL ) ] );
         echo $result;
         exit( );
