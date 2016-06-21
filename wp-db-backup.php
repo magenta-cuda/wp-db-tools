@@ -42,7 +42,7 @@ const DDT_RESTORED           = 'ddt_restored';
 const DDT_SUCCESS            = 'STATUS:SUCCESS';
 const DDT_FAILURE            = 'STATUS:FAILURE';
 const DDT_COLS               = 4;
-const DDT_DELTA              = 256;   # TODO:
+const DDT_DELTA              = 1;   # TODO:
 const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
 
 function ddt_get_options( $o = NULL ) {
@@ -325,7 +325,7 @@ if ( defined( 'DOING_AJAX' ) ) {
             return $value === DDT_BACKUP;
         } ) );
         $suffix       = $options[ 'ddt_x-orig_suffix' ];
-        $messages[ ]  = $action . ': ' . implode( ', ', $tables );
+        #$messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
         $status       = DDT_SUCCESS;
         foreach ( $tables as $table ) {
@@ -371,8 +371,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         } else {
             wp_send_json_error( $data );
         }
-        #echo implode( "\n", $messages ) . "\n";
-        #exit( );
     } );   # add_action( 'wp_ajax_mc_backup_tables', function( ) {
 
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
@@ -393,7 +391,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables           = ddt_backed_up_tables( );
         $suffix           = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
         $messages         = [ ];
-        $messages[ ]      = $action . ': ' . implode( ', ', $tables );
+        #$messages[ ]      = $action . ': ' . implode( ', ', $tables );
         $tables_not_to_do = $_REQUEST;
         $status           = DDT_SUCCESS;
         # restore all tables that have a backup copy
@@ -444,8 +442,6 @@ if ( defined( 'DOING_AJAX' ) ) {
         } else {
             wp_send_json_error( $data );
         }
-        #echo implode( "\n", $messages ) . "\n";
-        #exit( );
     } );   # add_action( 'wp_ajax_mc_restore_tables', function( ) {
 
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action

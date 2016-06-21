@@ -168,7 +168,6 @@ function ddt_wp_db_diff_init( ) {
         
         $options          = ddt_get_options( );
         $backed_up_tables = ddt_backed_up_tables( );
-        error_log( 'ddt_post_query():$backed_up_tables=' . print_r( $backed_up_tables, true ) );
         $id_for_table     = ddt_id_for_table( );
 
         static $regex_of_tables_orig = NULL;
@@ -185,8 +184,6 @@ function ddt_wp_db_diff_init( ) {
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
-            error_log( 'ddt_post_query():$regex_of_tables_orig=' . $regex_of_tables_orig );
-            error_log( 'ddt_post_query():$last_query=' . $last_query );
             if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
