@@ -52,7 +52,7 @@ function ddt_get_options( $o = NULL ) {
     if ( $o !== NULL ) {
         $options = $o;
     } else if ( $options === NULL ) {
-        $options = \get_option( 'ddt-x-wp_db_tools', [
+        $options = \get_option( 'ddt_x-wp_db_tools', [
             'ddt_x-version'          => '2.0',
             'ddt_x-orig_suffix'      => '_ddt_x_1113',
             'ddt_x-suffix_verified'  => FALSE,
@@ -254,18 +254,27 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
 </div>
 <?php
 }   # function ddt_emit_backup_page( ) {
-        
-add_action( 'admin_menu', function( ) {
-    add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_emit_backup_page' );
-} );   # add_action( 'admin_menu', function( ) {
 
-add_action( 'admin_enqueue_scripts', function( $hook ) {
-    if ( strpos( $hook, DDT_BACKUP_PAGE_NAME ) !== FALSE ) {
-        wp_enqueue_style(  'wp-db-tools',  plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
-        wp_enqueue_script( 'wp-db-backup', plugin_dir_url( __FILE__ ) . 'wp-db-backup.js', [ 'jquery' ] );
-        wp_localize_script( 'wp-db-backup', 'ddt_xPhpData', [ 'DDT_SUCCESS' => DDT_SUCCESS ] );
-    }
-} );
+if ( is_admin( ) ) {
+    add_filter( 'plugin_row_meta', function( $links, $file ) {
+        if ( $file === ddt_plugin_basename( ) ) {
+            return array_merge( $links, [ 'docs' => '<a href="https://wpdbdt.wordpress.com/" target="_blank">View documentation</a>' ] );
+        }
+        return (array) $links;
+    }, 10, 2 );
+
+    add_action( 'admin_menu', function( ) {
+        add_menu_page( 'Database Developer\'s Tools', 'Database Developer\'s Tools', 'export', DDT_BACKUP_PAGE_NAME, '\ddt_x_wp_db_tools\ddt_emit_backup_page' );
+    } );   # add_action( 'admin_menu', function( ) {
+
+    add_action( 'admin_enqueue_scripts', function( $hook ) {
+        if ( strpos( $hook, DDT_BACKUP_PAGE_NAME ) !== FALSE ) {
+            wp_enqueue_style(  'wp-db-tools',  plugin_dir_url( __FILE__ ) . 'wp-db-tools.css' );
+            wp_enqueue_script( 'wp-db-backup', plugin_dir_url( __FILE__ ) . 'wp-db-backup.js', [ 'jquery' ] );
+            wp_localize_script( 'wp-db-backup', 'ddt_xPhpData', [ 'DDT_SUCCESS' => DDT_SUCCESS ] );
+        }
+    } );
+}
 
 function ddt_get_diff_changes_table( ) {
     return DDT_DIFF_CHANGES_TABLE;
@@ -354,13 +363,13 @@ if ( defined( 'DOING_AJAX' ) ) {
             if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
                 # start a diff session
                 $options[ 'ddt_x-enable_diff' ] = 'enabled';
-                \update_option( 'ddt-x-wp_db_tools', $options );
+                \update_option( 'ddt_x-wp_db_tools', $options );
                 ddt_get_options( $options );
                 ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
                 ddt_wp_db_diff_start_session( );
             } else {
                 $options[ 'ddt_x-enable_diff' ] = NULL;
-                \update_option( 'ddt-x-wp_db_tools', $options );
+                \update_option( 'ddt_x-wp_db_tools', $options );
                 ddt_get_options( $options );
             }
         }
@@ -425,13 +434,13 @@ if ( defined( 'DOING_AJAX' ) ) {
             if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
                 # start a diff session
                 $options[ 'ddt_x-enable_diff' ] = 'enabled';
-                \update_option( 'ddt-x-wp_db_tools', $options );
+                \update_option( 'ddt_x-wp_db_tools', $options );
                 ddt_get_options( $options );
                 ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
                 ddt_wp_db_diff_start_session( );
             } else {
                 $options[ 'ddt_x-enable_diff' ] = NULL;
-                \update_option( 'ddt-x-wp_db_tools', $options );
+                \update_option( 'ddt_x-wp_db_tools', $options );
                 ddt_get_options( $options );
             }
         }
@@ -489,7 +498,7 @@ if ( defined( 'DOING_AJAX' ) ) {
         if ( $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, NULL, NULL, $suffix ) ) {
             $options[ 'ddt_x-orig_suffix' ]     = $suffix;
             $options[ 'ddt_x-suffix_verified' ] = TRUE;
-            \update_option( 'ddt-x-wp_db_tools', $options );
+            \update_option( 'ddt_x-wp_db_tools', $options );
             ddt_get_options( $options );
         }
 

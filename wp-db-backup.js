@@ -85,6 +85,9 @@ jQuery( document ).ready( function( ) {
             } );
             log.text( text );
             if ( text.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
+                var buttons = jQuery( "div#ddt_x-main_buttons" );
+                buttons.find( "button#ddt_x-restore" ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-delete"  ).prop( "disabled", false );
             } else {
                 restoreTables( response.data.tables_not_to_do );
             }
@@ -92,6 +95,8 @@ jQuery( document ).ready( function( ) {
     }
     
     jQuery( "button.ddt_x-button#ddt_x-restore" ).click( function( e ) {
+        this.disabled = true;
+        jQuery( "div#ddt_x-main_buttons button#ddt_x-delete" ).prop( "disabled", true );
         jQuery( "#mc_status" ).text( "" );
         restoreTables( { action: "mc_restore_tables", 'ddt_x-nonce': jQuery( "input#ddt_x-nonce" ).val( ) } );
     } );
@@ -100,11 +105,12 @@ jQuery( document ).ready( function( ) {
     
     jQuery( "button.ddt_x-button#ddt_x-delete" ).click( function( e ) {
         this.disabled = true;
+        var buttons = jQuery( "div#ddt_x-main_buttons" );
+        buttons.find( "button#ddt_x-restore" ).prop( "disabled", true );
         jQuery( "#mc_status" ).text( workingText );
         jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': jQuery( "input#ddt_x-nonce" ).val( ) }, function ( response ) {
             jQuery( "#mc_status" ).text( response );
             if ( response.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
-                var buttons = jQuery( "div#ddt_x-main_buttons" );
                 buttons.find( "button#ddt_x-backup"        ).prop( "disabled", false );
                 buttons.find( "button#ddt_x-restore"       ).prop( "disabled", true  );
                 buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", true  );
@@ -113,6 +119,8 @@ jQuery( document ).ready( function( ) {
                 options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", false );
                 options.find( "button#ddt_x-suffix_verify" ).prop( "disabled", false );
                 options.find( "input#ddt_x-enable_diff"    ).prop( "disabled", false );
+            } else {
+                buttons.find( "button#ddt_x-delete"        ).prop( "disabled", false );
             }
         } );
     } );

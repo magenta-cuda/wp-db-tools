@@ -584,7 +584,7 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
                     $options[ $option ][ $_POST[ 'ddt_x-table' ] ] = $_POST[ $option ];
                 }
             }
-            \update_option( 'ddt-x-wp_db_tools', $options );
+            \update_option( 'ddt_x-wp_db_tools', $options );
             ddt_get_options( $options );
         } );   # add_action( 'wp_ajax_ddt_x-update_diff_options', function( ) {
         

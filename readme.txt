@@ -3,8 +3,8 @@ Contributors: Magenta Cuda
 Donate link:
 Tags: database, diff, backup, tool, testing
 Requires at least: 3.6
-Tested up to: 4.3.1
-Stable tag: 2.1
+Tested up to: 4.5
+Stable tag: 2.1.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 WordPress database tools for debugging.
@@ -44,6 +44,8 @@ No, the backup is done by creating additional tables in the same database so if 
 3. Diff Tool - Detail View
 
 == Changelog ==
+= 2.1.0.1 =
+* bug fix
 = 2.1 =
 * improved user interface
 * code refactored to improve software quality
@@ -60,6 +62,8 @@ No, the backup is done by creating additional tables in the same database so if 
 * Initial release.
   
 == Upgrade Notice ==
+= 2.1.0.1 =
+* bug fix
 = 2.1 =
 * improved user interface
 * code refactored to improve software quality
