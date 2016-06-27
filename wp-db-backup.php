@@ -242,7 +242,8 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
         <button id="ddt_x-backup"    class="ddt_x-button" type="button" <?php if ( $backup_tables || !$table_selected ) { echo ' disabled'; } ?>>Backup Tables</button>
         <button id="ddt_x-restore"   class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Restore Tables</button>
         <button id="ddt_x-delete"    class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Delete Backup</button>
-        <button id="ddt_x-diff_tool" class="ddt_x-button" type="button" <?php if ( !$backup_tables                    ) { echo ' disabled'; } ?>>Open Diff Tool</button>
+        <button id="ddt_x-diff_tool" class="ddt_x-button" type="button"
+            <?php if ( !$backup_tables || empty($options[ 'ddt_x-enable_diff' ] ) ) { echo ' disabled'; } ?>>Open Diff Tool</button>
     </div>
 <?php
     }
@@ -360,7 +361,8 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         if ( !in_array( DDT_BACKUP, $tables_to_do ) || $status === DDT_FAILURE ) {
             $messages[ ] = $action . ': ' . $status;
-            if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+            if ( $status === DDT_SUCCESS && !empty( $_REQUEST[ 'ddt_x-enable_diff' ] ) && $_REQUEST[ 'ddt_x-enable_diff' ] === 'enabled'
+                && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
                 # start a diff session
                 $options[ 'ddt_x-enable_diff' ] = 'enabled';
                 \update_option( 'ddt_x-wp_db_tools', $options );
@@ -433,15 +435,8 @@ if ( defined( 'DOING_AJAX' ) ) {
             $messages[ ] = $action . ': ' . $status;
             if ( $status === DDT_SUCCESS && !empty( $options[ 'ddt_x-enable_diff' ] ) && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
                 # start a diff session
-                $options[ 'ddt_x-enable_diff' ] = 'enabled';
-                \update_option( 'ddt_x-wp_db_tools', $options );
-                ddt_get_options( $options );
                 ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
                 ddt_wp_db_diff_start_session( );
-            } else {
-                $options[ 'ddt_x-enable_diff' ] = NULL;
-                \update_option( 'ddt_x-wp_db_tools', $options );
-                ddt_get_options( $options );
             }
         }
         $messages    = ddt_format_messages( $messages, $action );

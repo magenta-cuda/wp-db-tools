@@ -45,7 +45,7 @@ jQuery( document ).ready( function( ) {
                 var buttons = jQuery( "div#ddt_x-main_buttons" );
                 buttons.find( "button#ddt_x-restore"       ).prop( "disabled", false );
                 buttons.find( "button#ddt_x-delete"        ).prop( "disabled", false );
-                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", !jQuery( "input#ddt_x-enable_diff" ).prop( "checked" ) );
                 jQuery( "fieldset#ddt_x-table_fields"      ).prop( "disabled", true  );
                 var options = jQuery( "fieldset#mc_db_tools_options" );
                 options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", true  );
