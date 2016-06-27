@@ -361,18 +361,19 @@ if ( defined( 'DOING_AJAX' ) ) {
         }
         if ( !in_array( DDT_BACKUP, $tables_to_do ) || $status === DDT_FAILURE ) {
             $messages[ ] = $action . ': ' . $status;
-            if ( $status === DDT_SUCCESS && !empty( $_REQUEST[ 'ddt_x-enable_diff' ] ) && $_REQUEST[ 'ddt_x-enable_diff' ] === 'enabled'
-                && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
-                # start a diff session
-                $options[ 'ddt_x-enable_diff' ] = 'enabled';
-                \update_option( 'ddt_x-wp_db_tools', $options );
-                ddt_get_options( $options );
-                ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
-                ddt_wp_db_diff_start_session( );
-            } else {
-                $options[ 'ddt_x-enable_diff' ] = NULL;
-                \update_option( 'ddt_x-wp_db_tools', $options );
-                ddt_get_options( $options );
+            if ( $status === DDT_SUCCESS ) {
+                if ( !empty( $_REQUEST[ 'ddt_x-enable_diff' ] ) && $_REQUEST[ 'ddt_x-enable_diff' ] === 'enabled' && file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
+                    # start a diff session
+                    $options[ 'ddt_x-enable_diff' ] = 'enabled';
+                    \update_option( 'ddt_x-wp_db_tools', $options );
+                    ddt_get_options( $options );
+                    ddt_wp_db_diff_included( include_once( __DIR__ . '/wp-db-diff.php' ) );
+                    ddt_wp_db_diff_start_session( );
+                } else {
+                    $options[ 'ddt_x-enable_diff' ] = NULL;
+                    \update_option( 'ddt_x-wp_db_tools', $options );
+                    ddt_get_options( $options );
+                }
             }
         }
         $messages    = ddt_format_messages( $messages, $action );
