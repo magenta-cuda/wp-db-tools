@@ -197,11 +197,15 @@ EOD;
     </fieldset>
     <fieldset id="ddt_x-important_messages" class="mc_db_tools_pane">
         <legend>Important</legend>
-It is very important that you select all the tables that may be changed.
+<p>It is very important that you select all the tables that may be changed.
 Otherwise when you restore the tables you may be left with an inconsistent database.
 You should always have a real backup just in case you inadvertantly omit a required table.
 If you are not sure about which tables will be changed you should select all tables.
-Although not efficient this is always safe.
+Although not efficient this is always safe.</p>
+<p>If you have selected the wp_usermeta table do not log out without ending a database debugging session.
+Otherwise your session key will change and when you try and restore the tables the old session key will
+also be restored and invalidate your current session.</p>
+
     </fieldset>
     <fieldset id="mc_db_tools_options" class="mc_db_tools_pane">
         <legend>Options</legend>

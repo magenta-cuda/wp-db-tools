@@ -40,9 +40,11 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
 namespace ddt_x_wp_db_tools {
 
 const DDT_DIFF_PAGE_NAME     = 'ddt_diff_tool';
+const DDT_CONCAT_OP          = '$^';
 
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
+    error_log( 'ddt_wp_db_diff_start_session():' );
     $wpdb->query( 'CREATE TABLE ' . ddt_get_diff_changes_table( ) .
                   ' ( cid INT NOT NULL AUTO_INCREMENT, table_name VARCHAR( 255 ) NOT NULL, operation VARCHAR( 31 ) NOT NULL, row_ids VARCHAR( 255 ) NOT NULL, PRIMARY KEY( cid ) )' );  
     ddt_disable_query_filter( FALSE );    
@@ -143,9 +145,10 @@ function ddt_wp_db_diff_init( ) {
             continue;
         }
         $results= $wpdb->get_results( 'show columns from ' . $table );
+        $id_for_table[ $table ] = [ ];
         foreach( $results as $result ) {
             if ( $result->Key === 'PRI' ) {
-                $id_for_table[ $table ] = $result->Field;
+                $id_for_table[ $table ][ ] = $result->Field;
             }
         }
     }
@@ -158,6 +161,16 @@ function ddt_wp_db_diff_init( ) {
         }
         return $disable_query_filter;
     }
+    
+    function get_table_id( $table, $for_sql = FALSE ) {
+        $id = ddt_id_for_table( )[ $table ];
+        if ( !$for_sql ) {
+            return $id;
+        } else if ( count( $id ) === 1 ) {
+            return $id[ 0 ];
+        }
+        return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', $id ) . ' )';
+    }
 
     function ddt_post_query( ) {
         global $wpdb;
@@ -168,7 +181,6 @@ function ddt_wp_db_diff_init( ) {
         
         $options          = ddt_get_options( );
         $backed_up_tables = ddt_backed_up_tables( );
-        $id_for_table     = ddt_id_for_table( );
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
@@ -202,20 +214,25 @@ function ddt_wp_db_diff_init( ) {
                         # parse column names
                         preg_match_all( '#\w+#', $matches[ 1 ], $fields );
                         # find the position of the primary key
-                        if ( ( $index = array_search( $id_for_table[ $table ], $fields[ 0 ] ) ) !== FALSE ) {
-                            $values = $matches[ 4 ];
-                            $position = 0;
-                            for ( $i = 0; $i <= $index; $i++ ) {
-                                # parse column values until the corresponding position of the primary key
-                                $value = ddt_wp_db_diff_get_next_mysql_token( $values, $position );
+                        $results = [ ];
+                        $values = $matches[ 4 ];
+                        foreach ( get_table_id( $table ) as $id_for_table ) {
+                            if ( ( $index = array_search( $id_for_table, $fields[ 0 ] ) ) !== FALSE ) {
+                                $position = 0;
+                                for ( $i = 0; $i <= $index; $i++ ) {
+                                    # parse column values until the corresponding position of the primary key
+                                    $value = ddt_wp_db_diff_get_next_mysql_token( $values, $position );
+                                }
+                                if ( preg_match( '#^(\'|")(.*)\1$#', $value, $matches ) ) {
+                                    $results[ ] = $matches[ 2 ];
+                                } else {
+                                    $results[ ] = $value;
+                                }
                             }
-                            if ( preg_match( '#^(\'|")(.*)\1$#', $value, $matches ) ) {
-                                $results = $matches[ 2 ];
-                            } else {
-                                $results = $value;
-                            }
-                        }   
-                    } else if ( preg_match( '#' . $id_for_table[ $table ] . '\s*(\'|")(\.+?)\1#', $last_query, $matches ) ) {
+                        }
+                        error_log( '$results=' . print_r( $results, true ) );
+                        $results = implode( DDT_CONCAT_OP, $results );
+                    } else if ( preg_match( '#' . get_table_id( $table )[ 0 ] . '\s*(\'|")(\.+?)\1#', $last_query, $matches ) ) {
                         $results = $matches[ 2 ];
                     }
                     if ( !$results ) {
@@ -230,7 +247,7 @@ function ddt_wp_db_diff_init( ) {
                 }
                 $operation      = 'UPDATE';
                 $where          = $matches[ 4 ];
-                $id             = $id_for_table[ $table ];
+                $id             = get_table_id( $table, TRUE );
                 $doing_my_query = TRUE;
                 $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
@@ -246,7 +263,7 @@ function ddt_wp_db_diff_init( ) {
                 }
                 $operation      = 'DELETE';
                 $where          = $matches[ 4 ];
-                $id             = $id_for_table[ $table ];
+                $id             = get_table_id( $table, TRUE );
                 $doing_my_query = TRUE;
                 $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
                 $doing_my_query = FALSE;
@@ -293,8 +310,7 @@ function ddt_wp_db_diff_init( ) {
             add_submenu_page( DDT_BACKUP_PAGE_NAME, 'Diff Tool', 'Diff Tool', 'export', DDT_DIFF_PAGE_NAME, function( ) {
                 global $wpdb;
                 
-                $options      = ddt_get_options( );
-                $id_for_table = ddt_id_for_table( );
+                $options  = ddt_get_options( );
 ?>
 <h2 id="ddt_x-diff_tool_title">Database Diff Tool</h2>
 <button type="button" id="ddt_x-reload_diff" class="ddt_x-button">Refresh</button>
@@ -338,17 +354,44 @@ No database operations have been done on the selected tables.
                 }
                 echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
                 foreach ( $tables as $table_name => $table ) {
-                    $table_id = $id_for_table[ $table_name ];
+                    $table_id = get_table_id( $table_name, TRUE );
                     $inserts  = array_unique( $table[ 'INSERT' ] );
                     $deletes  = array_unique( $table[ 'DELETE' ] );
+                    $inserts = array_map( function( $id ) {
+                        if ( is_numeric( $id ) ) {
+                            return $id;
+                        }
+                        return "'$id'";
+                    }, $inserts );
+                    $deletes = array_map( function( $id ) {
+                        if ( is_numeric( $id ) ) {
+                            return $id;
+                        }
+                        return "'$id'";
+                    }, $deletes );
+                    error_log( '$table_id=' . $table_id );
+                    error_log( '$inserts=' . print_r( $inserts, true ) );
                     if ( $inserts ) {
                         # get the deleted inserts which are not yet included in $deletes
                         $existing_inserts = $wpdb->get_col( "SELECT $table_id FROM $table_name WHERE $table_id IN ( " . implode( ', ', $inserts ) . ' )' );
+                        $existing_inserts = array_map( function( $id ) {
+                            if ( is_numeric( $id ) ) {
+                                return $id;
+                            }
+                            return "'$id'";
+                        }, $existing_inserts );
                         if ( count( $existing_inserts ) < count( $inserts ) ) {
                             $deletes = array_unique( array_merge( $deletes, array_diff( $inserts, $existing_inserts ) ) );
                         }
                     }
+                    error_log( '$existing_inserts=' . print_r( $existing_inserts, true ) );
                     $updates     = array_unique( $table[ 'UPDATE' ] );
+                    $updates = array_map( function( $id ) {
+                        if ( is_numeric( $id ) ) {
+                            return $id;
+                        }
+                        return "'$id'";
+                    }, $updates );
                     $inserts_all = $inserts;
                     $inserts     = array_diff( $inserts, $deletes );
                     $updates     = array_diff( $updates, $inserts, $deletes );
@@ -399,15 +442,13 @@ No database operations have been done on the selected tables.
         add_action( 'wp_ajax_ddt_x-diff_view_changes', function( ) {
             global $wpdb;
 
-            $options      = ddt_get_options( );
-            $id_for_table = ddt_id_for_table( );
+            $options = ddt_get_options( );
 
             if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_diff' ) ) {
                 wp_nonce_ays( '' );
             }
             $suffix     = $options[ 'ddt_x-orig_suffix' ];
             $table      = $_POST[ 'table' ];
-            $table_id   = $id_for_table[ $table ];
             $operation  = explode( ',', $_POST[ 'operation' ] );
             # replace pretty header labels for operation with the operation tag
             $operation  = str_replace( 'Inserts', 'INSERT', $operation );
@@ -453,6 +494,15 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             sort( $ids[ 'INSERT' ] );
             sort( $ids[ 'UPDATE' ] );
             sort( $ids[ 'DELETE' ] );
+            foreach ( $ids as &$id ) {
+                $id = array_map( function( $id ) {
+                    if ( is_numeric( $id ) ) {
+                        return $id;
+                    }
+                    return "'$id'";
+                }, $id );
+            }
+            error_log( '$ids=' . print_r( $ids, true ) );
             # remove updates to inserted and deleted rows as the net effect for the session is an insert or delete
             $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'INSERT' ] );
             $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'DELETE' ] );
@@ -461,11 +511,15 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             # remove inserted rows from deleted rows as the net effect for the session is the insert/delete did not occur
             $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
-            $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
-                return $v !== $table_id;
-            } );
-            array_unshift( $columns, $table_id );
+            foreach ( get_table_id( $table ) as $table_id ) {
+                $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
+                    return $v !== $table_id;
+                } );
+            }
+            array_unshift( $columns, get_table_id( $table, TRUE ) );
             $columns_imploded = implode( ', ', $columns );
+            $table_id = get_table_id( $table, TRUE );
+            error_log( '$table_id=' . $table_id );
             if (  $ids[ 'INSERT' ] ) {
                 $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
@@ -480,6 +534,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
+            error_log( '$inserts=' . print_r( $inserts, true ) );
             echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><tr><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 echo '<th>' . $column . '</th>';
@@ -509,6 +564,10 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     next( $delete_ids );
                 }
                 if ( $operation === 'INSERT' ) {
+                    if ( substr( $id, 0, 1 ) === '\'' ) {
+                        $id = trim( $id, '\'' );
+                    }
+                    error_log( '$id=' . $id );
                     if ( !array_key_exists( $id, $inserts) ) {
                         # this can occur on an insert that gets deleted in the same session
                         #error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad INSERT id \"$id\" for table \"$table\"." );
