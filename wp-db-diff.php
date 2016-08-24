@@ -58,6 +58,7 @@ function ddt_wp_db_diff_end_session( ) {
 }   # function ddt_wp_db_diff_end_session( ) {
 
 function ddt_wp_db_diff_prettify( $content ) {
+    $content = str_replace( DDT_CONCAT_OP, ', ', $content );
     if ( is_serialized( $content ) ) {
         return json_encode( unserialize( $content ), JSON_HEX_TAG | JSON_FORCE_OBJECT );
     }
@@ -537,6 +538,9 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             error_log( '$inserts=' . print_r( $inserts, true ) );
             echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><tr><th>Row Status</th>';
             foreach ( $columns as $column ) {
+                if ( strpos( $column, 'CONCAT(' ) === 0 ) {
+                    $column = str_replace( '"' . DDT_CONCAT_OP . '", ', '', substr( $column, 7, -1  ) );
+                }
                 echo '<th>' . $column . '</th>';
             }
             echo "</tr></thead>\n<tbody>";
