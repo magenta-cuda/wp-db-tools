@@ -40,7 +40,7 @@ generate an error message like this "ERROR:ddt_post_query():unknown MySQL operat
 namespace ddt_x_wp_db_tools {
 
 const DDT_DIFF_PAGE_NAME     = 'ddt_diff_tool';
-const DDT_CONCAT_OP          = '$^';
+const DDT_CONCAT_OP          = '$#^';
 
 function ddt_wp_db_diff_start_session( ) {
     global $wpdb;
@@ -57,6 +57,7 @@ function ddt_wp_db_diff_end_session( ) {
 }   # function ddt_wp_db_diff_end_session( ) {
 
 function ddt_wp_db_diff_prettify( $content ) {
+    # first if a CONCAT value replace the ugly CONCAT value with user friendly version
     $content = str_replace( DDT_CONCAT_OP, ', ', $content );
     if ( is_serialized( $content ) ) {
         return json_encode( unserialize( $content ), JSON_HEX_TAG | JSON_FORCE_OBJECT );
@@ -169,6 +170,7 @@ function ddt_wp_db_diff_init( ) {
         } else if ( count( $id ) === 1 ) {
             return $id[ 0 ];
         }
+        # for multiple primary keys use CONCAT to create a single key
         return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', $id ) . ' )';
     }
 
@@ -239,6 +241,7 @@ function ddt_wp_db_diff_init( ) {
                                 }
                             }
                         }
+                        # for multiple primary keys use CONCAT to create a single key
                         $results = implode( DDT_CONCAT_OP, $results );
                     } else if ( preg_match( '#' . get_table_id( $table )[ 0 ] . '\s*(\'|")(\.+?)\1#', $last_query, $matches ) ) {
                         $results = $matches[ 2 ];
@@ -515,6 +518,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><tr><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 if ( strpos( $column, 'CONCAT(' ) === 0 ) {
+                    # replace the ugly CONCAT key with user friendly version
                     $column = str_replace( '"' . DDT_CONCAT_OP . '", ', '', substr( $column, 7, -1  ) );
                 }
                 echo '<th>' . $column . '</th>';
@@ -543,10 +547,10 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     $id = $delete_id;
                     next( $delete_ids );
                 }
+                if ( substr( $id, 0, 1 ) === '\'' ) {
+                    $id = trim( $id, '\'' );
+                }
                 if ( $operation === 'INSERT' ) {
-                    if ( substr( $id, 0, 1 ) === '\'' ) {
-                        $id = trim( $id, '\'' );
-                    }
                     if ( !array_key_exists( $id, $inserts) ) {
                         # this can occur on an insert that gets deleted in the same session
                         #error_log( "WARNING:action:wp_ajax_ddt_x-diff_view_changes:maybe bad INSERT id \"$id\" for table \"$table\"." );
