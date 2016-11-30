@@ -44,6 +44,7 @@ const DDT_FAILURE            = 'STATUS:FAILURE';
 const DDT_COLS               = 4;
 const DDT_DELTA              = 1;   # TODO:
 const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
+const DDT_STATUS_TABLE       = 'ddt_x_status_1113';
 
 function ddt_get_options( $o = NULL ) {
     global $wpdb;
@@ -287,7 +288,7 @@ function ddt_get_diff_changes_table( ) {
 
 function ddt_in_diff_session( ) {
     global $wpdb;
-    return !!$wpdb->get_col( 'show tables like "' . ddt_get_diff_changes_table( ) . '"' );
+    return !!$wpdb->get_col( 'SHOW TABLES LIKE "' . ddt_get_diff_changes_table( ) . '"' );
 }
 
 function ddt_wp_db_diff_included( $i = NULL ) {
@@ -297,6 +298,30 @@ function ddt_wp_db_diff_included( $i = NULL ) {
     }
     return $wp_db_diff_included;
 }   # function ddt_wp_db_diff_included( $i = NULL ) {
+
+function ddt_get_status( $name ) {
+    global $wpdb;
+    if ( $wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
+        $col = $wpdb->get_col( 'SELECT option_value FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "' . $name . '"' );
+        return $col ? maybe_unserialize( $col[ 0 ] ) : [ ];
+    } else {
+        return [ ];
+    }
+}
+
+function ddt_set_status( $name, $status ) {
+    global $wpdb;
+    error_log( 'ddt_set_status():$status=' . print_r( $status, true ) );
+    if ( !$wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
+        $wpdb->query( 'CREATE TABLE ' . DDT_STATUS_TABLE . " LIKE $wpdb->options" );
+        $wpdb->query( 'ALTER TABLE ' . DDT_STATUS_TABLE . ' DROP COLUMN autoload' );
+    }
+    if ( $id = $wpdb->get_col( 'SELECT option_id FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "' . $name . '"' ) ) {
+        $wpdb->update( DDT_STATUS_TABLE, [ 'option_value' => maybe_serialize( $status ) ], [ 'option_id' => $id[ 0 ] ], [ '%s' ], [ '%d' ] );
+    } else {
+        $wpdb->insert( DDT_STATUS_TABLE, [ 'option_name' => $name, 'option_value' => maybe_serialize( $status ) ], [ '%s', '%s' ] );
+    }
+}
 
 if ( defined( 'DOING_AJAX' ) ) {
 
@@ -343,6 +368,9 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables_to_do = $_REQUEST;
         $status       = DDT_SUCCESS;
         foreach ( $tables as $table ) {
+            $started = ddt_get_status( 'started' );
+            $started[ ] = $table;
+            ddt_set_status( 'started', $started );
             # rename original table to use as backup
             if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = DDT_FAILURE;
@@ -359,6 +387,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
             unset( $tables_to_do[ $table ] );
+            $completed = ddt_get_status( 'completed' );
+            $completed[ ] = $table;
+            ddt_set_status( 'completed', $completed );
             if ( ( count( $_REQUEST ) - count( $tables_to_do ) ) >= DDT_DELTA ) {
                 break;
             }
@@ -480,6 +511,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 $status = DDT_FAILURE;
                 break;
             }
+        }
+        if ( $wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
+            $wpdb->query( 'DROP TABLE ' . DDT_STATUS_TABLE );
         }
         $messages[ ] = $action . ': ' . $status;
         $messages    = ddt_format_messages( $messages, $action );
