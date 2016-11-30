@@ -327,11 +327,31 @@ if ( defined( 'DOING_AJAX' ) ) {
     add_action( 'admin_init', function( ) {
         global $wpdb;
         if ( $wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
-            $started = $wpdb->get_col( 'SELECT option_value FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "backup started"' );
-            $started = $started ? maybe_unserialize( $started[ 0 ] ) : [ ];
-            $completed = $wpdb->get_col( 'SELECT option_value FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "backup completed"' );
-            $completed = $completed ? maybe_unserialize( $completed[ 0 ] ) : [ ];
-            error_log( 'ACTION::admin_init():$started=' . print_r( $started, true ) );
+            $to_do  = ddt_get_status( 'tables to do' );
+            $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
+            # check for partially done tables
+            foreach ( [ 'backup', 'restore' ] as $op ) {
+                $started   = ddt_get_status( "$op started"   );
+                $completed = ddt_get_status( "$op completed" );
+                error_log( 'ACTION::admin_init:$started=' . print_r( $started, true ) );
+                error_log( 'ACTION::admin_init:$completed=' . print_r( $completed, true ) );
+                if ( $started_not_completed = array_diff( $started, $completed ) ) {
+                    foreach ( $started_not_completed as $table ) {
+                        if ( $op === 'backup' ) {
+                            if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
+                                if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
+                                    $wpdb->query( "DROP TABLE $table" );
+                                }
+                                $wpdb->query( "ALTER TABLE {$table}{$suffix} RENAME TO $table" );
+                            }
+                        } else if ( $op === 'restore' ) {
+                        }
+                    }
+                }
+                if ( $yet_to_do = array_diff( $to_do, $completed ) ) {
+                    # TODO: force client to restart
+                }
+            }
         }
     } );
     
