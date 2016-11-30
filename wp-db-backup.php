@@ -311,7 +311,6 @@ function ddt_get_status( $name ) {
 
 function ddt_set_status( $name, $status ) {
     global $wpdb;
-    error_log( 'ddt_set_status():$status=' . print_r( $status, true ) );
     if ( !$wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
         $wpdb->query( 'CREATE TABLE ' . DDT_STATUS_TABLE . " LIKE $wpdb->options" );
         $wpdb->query( 'ALTER TABLE ' . DDT_STATUS_TABLE . ' DROP COLUMN autoload' );
@@ -325,6 +324,17 @@ function ddt_set_status( $name, $status ) {
 
 if ( defined( 'DOING_AJAX' ) ) {
 
+    add_action( 'admin_init', function( ) {
+        global $wpdb;
+        if ( $wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
+            $started = $wpdb->get_col( 'SELECT option_value FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "backup started"' );
+            $started = $started ? maybe_unserialize( $started[ 0 ] ) : [ ];
+            $completed = $wpdb->get_col( 'SELECT option_value FROM ' . DDT_STATUS_TABLE . ' WHERE option_name = "backup completed"' );
+            $completed = $completed ? maybe_unserialize( $completed[ 0 ] ) : [ ];
+            error_log( 'ACTION::admin_init():$started=' . print_r( $started, true ) );
+        }
+    } );
+    
     # AJAX Helper Functions
 
     # ddt_wpdb_query() is a wrapper for $wpdb->query() for logging SQL commands and results
@@ -345,9 +355,9 @@ if ( defined( 'DOING_AJAX' ) ) {
             }
         }, $messages );
     }   # function ddt_format_messages( $messages, $tag ) {
-    
+
     # AJAX Handlers
-    
+
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
     add_action( 'wp_ajax_mc_backup_tables', function( ) {
@@ -363,14 +373,17 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
             return $value === DDT_BACKUP;
         } ) );
+        if ( !ddt_get_status( 'tables to do' ) ) {
+            ddt_set_status( 'tables to do', $tables );
+        }
         $suffix       = $options[ 'ddt_x-orig_suffix' ];
         #$messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
         $status       = DDT_SUCCESS;
         foreach ( $tables as $table ) {
-            $started = ddt_get_status( 'started' );
+            $started = ddt_get_status( 'backup started' );
             $started[ ] = $table;
-            ddt_set_status( 'started', $started );
+            ddt_set_status( 'backup started', $started );
             # rename original table to use as backup
             if ( ddt_wpdb_query( "ALTER TABLE $table RENAME TO {$table}{$suffix}", $messages ) === FALSE ) {
                 $status = DDT_FAILURE;
@@ -387,9 +400,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
             unset( $tables_to_do[ $table ] );
-            $completed = ddt_get_status( 'completed' );
+            $completed = ddt_get_status( 'backup completed' );
             $completed[ ] = $table;
-            ddt_set_status( 'completed', $completed );
+            ddt_set_status( 'backup completed', $completed );
             if ( ( count( $_REQUEST ) - count( $tables_to_do ) ) >= DDT_DELTA ) {
                 break;
             }
@@ -446,6 +459,9 @@ if ( defined( 'DOING_AJAX' ) ) {
             if ( !empty( $_REQUEST[ $table ] ) && $_REQUEST[ $table ] === DDT_RESTORED ) {
                 continue;
             }
+            $started = ddt_get_status( 'restore started' );
+            $started[ ] = $table;
+            ddt_set_status( 'restore started', $started );
             # drop the table to be restored
             if ( ddt_wpdb_query( "DROP TABLE $table", $messages ) === FALSE ) {
                 # this is not a critical error so we can ignore it
@@ -463,6 +479,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
             $tables_not_to_do[ $table ] = DDT_RESTORED;
+            $started = ddt_get_status( 'restore completed' );
+            $started[ ] = $table;
+            ddt_set_status( 'restore completed', $started );
             if ( ( count( $tables_not_to_do ) - count( $_REQUEST ) ) >= DDT_DELTA ) {
                 break;
             }
@@ -487,6 +506,7 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_delete_backup() is invoked as a 'wp_ajax_mc_delete_backup' action
 
     add_action( 'wp_ajax_mc_delete_backup', function( ) {
+        global $wpdb;
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
