@@ -42,7 +42,6 @@ const DDT_RESTORED           = 'ddt_restored';
 const DDT_SUCCESS            = 'STATUS:SUCCESS';
 const DDT_FAILURE            = 'STATUS:FAILURE';
 const DDT_COLS               = 4;
-const DDT_DELTA              = 1;   # TODO:
 const DDT_DIFF_CHANGES_TABLE = 'ddt_x_diff_tool_changes_1113';
 const DDT_STATUS_TABLE       = 'ddt_x_status_1113';
 
@@ -54,14 +53,18 @@ function ddt_get_options( $o = NULL ) {
         $options = $o;
     } else if ( $options === NULL ) {
         $options = \get_option( 'ddt_x-wp_db_tools', [
-            'ddt_x-version'          => '2.0',
-            'ddt_x-orig_suffix'      => '_ddt_x_1113',
-            'ddt_x-suffix_verified'  => FALSE,
-            'ddt_x-enable_diff'      => 'enabled',
-            'ddt_x-table_width'      => [ ],
-            'ddt_x-table_cell_size'  => [ ],
-            'ddt_x-table_sort_order' => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
+            'ddt_x-version'              => '2.0',
+            'ddt_x-orig_suffix'          => '_ddt_x_1113',
+            'ddt_x-tables_per_increment' => '4',
+            'ddt_x-suffix_verified'      => FALSE,
+            'ddt_x-enable_diff'          => 'enabled',
+            'ddt_x-table_width'          => [ ],
+            'ddt_x-table_cell_size'      => [ ],
+            'ddt_x-table_sort_order'     => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
         ] );
+        if ( empty( $options[ 'ddt_x-tables_per_increment' ] ) ) {
+            $options[ 'ddt_x-tables_per_increment' ] = '4';
+        }
     }
 
     return $options;
@@ -222,6 +225,14 @@ The backup tables will be named by concatenating the original table name with th
         <div id="mc_db_tools_error_pane"<?php echo $backup_suffix_ok ? ' style="display:none;"' : ''; ?>>
         The backup suffix &quot;<?php echo $options[ 'ddt_x-orig_suffix' ]; ?>&quot; conflicts with the existing table &quot;
         <?php echo "{$bad_table}{$options['ddt_x-orig_suffix']}"; ?>&quot;. Please use another suffix.
+        </div>
+        <div class="ddt_x-option_box">
+            <div class="ddt_x-option_comment">
+The backup/restore operation will be done incrementally. The number below is the number of tables that will be done per increment.
+            </div>
+            <label for="ddt_x-tables_per_increment">Tables per Increment: </label>
+            <input type="number" name="ddt_x-tables_per_increment" id="ddt_x-tables_per_increment"
+                value="<?php echo $options[ 'ddt_x-tables_per_increment' ]; ?>" size="4"<?php if ( $backup_tables ) { echo ' disabled'; } ?>>
         </div>
 <?php
     if ( file_exists( __DIR__ . '/wp-db-diff.php' ) ) {
@@ -397,6 +408,11 @@ if ( defined( 'DOING_AJAX' ) ) {
             ddt_set_status( 'tables to do', $tables );
         }
         $suffix       = $options[ 'ddt_x-orig_suffix' ];
+        $delta        = $_REQUEST[ 'ddt_x-tables_per_increment' ];
+        if ( $delta != $options[ 'ddt_x-tables_per_increment' ] ) {
+            $options[ 'ddt_x-tables_per_increment' ] = $delta;
+            \update_option( 'ddt_x-wp_db_tools', $options );
+        }
         #$messages[ ]  = $action . ': ' . implode( ', ', $tables );
         $tables_to_do = $_REQUEST;
         $status       = DDT_SUCCESS;
@@ -423,7 +439,7 @@ if ( defined( 'DOING_AJAX' ) ) {
             $completed = ddt_get_status( 'backup completed' );
             $completed[ ] = $table;
             ddt_set_status( 'backup completed', $completed );
-            if ( ( count( $_REQUEST ) - count( $tables_to_do ) ) >= DDT_DELTA ) {
+            if ( ( count( $_REQUEST ) - count( $tables_to_do ) ) >= $delta ) {
                 break;
             }
         }
@@ -469,7 +485,8 @@ if ( defined( 'DOING_AJAX' ) ) {
         $action           = 'restore tables';
         # get names of tables that have a backup copy
         $tables           = ddt_backed_up_tables( );
-        $suffix           = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
+        $suffix           = $options[ 'ddt_x-orig_suffix' ];
+        $delta            = $options[ 'ddt_x-tables_per_increment' ];
         $messages         = [ ];
         #$messages[ ]      = $action . ': ' . implode( ', ', $tables );
         $tables_not_to_do = $_REQUEST;
@@ -502,7 +519,7 @@ if ( defined( 'DOING_AJAX' ) ) {
             $started = ddt_get_status( 'restore completed' );
             $started[ ] = $table;
             ddt_set_status( 'restore completed', $started );
-            if ( ( count( $tables_not_to_do ) - count( $_REQUEST ) ) >= DDT_DELTA ) {
+            if ( ( count( $tables_not_to_do ) - count( $_REQUEST ) ) >= $delta ) {
                 break;
             }
         }
