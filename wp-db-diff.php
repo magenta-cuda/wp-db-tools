@@ -190,8 +190,9 @@ function ddt_wp_db_diff_init( ) {
             return;
         }
         
-        $options          = ddt_get_options( );
-        $backed_up_tables = ddt_backed_up_tables( );
+        $options            = ddt_get_options( );
+        $backed_up_tables   = ddt_backed_up_tables( );
+        $tables_to_log_read = $options[ 'ddt_x-tables_to_log_read' ];
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
@@ -282,8 +283,24 @@ function ddt_wp_db_diff_init( ) {
                     # this is a delete of a row that was inserted in this session
                     $results = -1;
                 }
-            } else if ( preg_match( '/^\s*select\s/i', $last_query ) ) {
-                # SELECT operation is ignored
+            } else if ( preg_match( '#^\s*select\s+.+\s+from\s*(\s|`)(\w+)\1\s*where\s(.*)$#i', $last_query, $matches ) ) {
+                # SELECT operation
+                $table = $matches[ 2 ];
+                if ( !in_array( $table, $tables_to_log_read ) ) {
+                    return;
+                }
+                $operation      = 'SELECT';
+                $where          = $matches[ 3 ];
+                error_log( '$where=' . $where );
+                $id             = get_table_id( $table, TRUE );
+                $doing_my_query = TRUE;
+                $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                error_log( '$results=' . print_r( $results, true ) );
+                $doing_my_query = FALSE;
+                if ( !$results ) {
+                    # this is a select of a row that was inserted in this session
+                    $results = -1;
+                }
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {

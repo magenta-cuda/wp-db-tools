@@ -362,8 +362,6 @@ if ( defined( 'DOING_AJAX' ) ) {
             foreach ( [ 'backup', 'restore' ] as $op ) {
                 $started   = ddt_get_status( "$op started"   );
                 $completed = ddt_get_status( "$op completed" );
-                error_log( 'ACTION::admin_init:$started=' . print_r( $started, true ) );
-                error_log( 'ACTION::admin_init:$completed=' . print_r( $completed, true ) );
                 if ( $started_not_completed = array_diff( $started, $completed ) ) {
                     foreach ( $started_not_completed as $table ) {
                         if ( $op === 'backup' ) {
