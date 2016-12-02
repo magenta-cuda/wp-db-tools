@@ -292,6 +292,9 @@ function ddt_wp_db_diff_init( ) {
                 $operation      = 'SELECT';
                 $where          = $matches[ 3 ];
                 error_log( '$where=' . $where );
+                # fix fields with table name prefix
+                $where = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
+                error_log( '$where=' . $where );
                 $id             = get_table_id( $table, TRUE );
                 $doing_my_query = TRUE;
                 $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
