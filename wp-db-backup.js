@@ -6,13 +6,13 @@ jQuery( document ).ready( function( ) {
     // convenience buttons to select or clear all checkboxes
     
     jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
-        jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", true );
+        jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", true );
         jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", false );
         e.preventDefault( );
     } );
 
     jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
-        jQuery( "input.ddt_x-table_checkbox" ).prop( "checked", false );
+        jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", false );
         jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", true );
         e.preventDefault( );
     } );
