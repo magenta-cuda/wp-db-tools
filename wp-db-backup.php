@@ -147,15 +147,17 @@ function ddt_emit_backup_page( ) {
         }
         return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
     } ) );
-    $orig_tables      = [ ];
-    $backup_tables    = ddt_get_backup_tables( $orig_tables );
-    $backup_suffix_ok = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
+    $orig_tables        = [ ];
+    $backup_tables      = ddt_get_backup_tables( $orig_tables );
+    $tables_to_log_read = $options[ 'ddt_x-tables_to_log_read' ];
+    $backup_suffix_ok   = ddt_check_backup_suffix( $bad_table, $backup_tables, $orig_tables );
 ?>
 <div class="ddt_x-container">
     <form id="ddt_x-tables">
     <fieldset id="ddt_x-table_fields" class="mc_db_tools_pane"
         <?php echo $backup_tables ? ' disabled' : ''; echo $backup_suffix_ok ? '' : ' style="display:none;"'; ?>>
         <legend>WordPress Tables for Backup</legend>
+        <p>The left checkbox selects a table for backup. The right checkbox additionally selects a table for logging MySQL SELECT requests by the diff tool.</p>
         <table class="ddt_x-table_table">
 <?php
     # create a HTML input element embedded in a HTML td element for each database table
@@ -185,12 +187,13 @@ function ddt_emit_backup_page( ) {
         }
         # create HTML input element with name = database table name and value = $mc_backup and text = database table name
         # if table is already backed up set the checked attribute
-        $checked = in_array( $table, $backup_tables ) ? ' checked' : '';
+        $checked          = in_array( $table, $backup_tables      ) ? ' checked' : '';
+        $checked_log_read = in_array( $table, $tables_to_log_read ) ? ' checked' : '';
         $table_selected |= $checked;
         echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="ddt_x-table_checkbox" value="$mc_backup"$checked>
-                <input type="checkbox" name="{$table}-log_read" id="{$table}-log_read" class="ddt_x-table_checkbox" value="$mc_log_read">
+                <input type="checkbox" name="{$table}-log_read" id="{$table}-log_read" class="ddt_x-table_checkbox" value="$mc_log_read"$checked_log_read>
                 <label for="$table">$table</label>
             </td>
 EOD;
@@ -422,9 +425,11 @@ if ( defined( 'DOING_AJAX' ) ) {
         if ( !ddt_get_status( 'tables to do' ) ) {
             ddt_set_status( 'tables to do', $tables );
         }
-        $tables_log_read = array_keys( array_filter( $_REQUEST, function( $value ) {
+        $tables_log_read = array_map( function( $table ) {
+            return substr( $table, 0, -9 );
+        }, array_keys( array_filter( $_REQUEST, function( $value ) {
             return $value === DDT_LOG_READ;
-        } ) );
+        } ) ) );
         if ( $tables_log_read != $options[ 'ddt_x-tables_to_log_read' ] ) {
             $options[ 'ddt_x-tables_to_log_read' ] = $tables_log_read;
             \update_option( 'ddt_x-wp_db_tools', $options );
