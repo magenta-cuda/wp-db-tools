@@ -38,6 +38,7 @@ namespace ddt_x_wp_db_tools {
 
 const DDT_BACKUP_PAGE_NAME   = 'ddt_backup_tool';
 const DDT_BACKUP             = 'mc_backup';
+const DDT_LOG_READ           = 'mc_log_read';
 const DDT_RESTORED           = 'ddt_restored';
 const DDT_SUCCESS            = 'STATUS:SUCCESS';
 const DDT_FAILURE            = 'STATUS:FAILURE';
@@ -60,10 +61,15 @@ function ddt_get_options( $o = NULL ) {
             'ddt_x-enable_diff'          => 'enabled',
             'ddt_x-table_width'          => [ ],
             'ddt_x-table_cell_size'      => [ ],
-            'ddt_x-table_sort_order'     => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ]
+            'ddt_x-table_sort_order'     => [ $wpdb->postmeta => '2(post_id), 3(meta_key)', $wpdb->options => '2(option_name)' ],
+            'ddt_x-tables_to_log_read'   => [ ]
         ] );
+        # versions prior to 2.2 will not have saved values for 'ddt_x-tables_per_increment' and 'ddt_x-tables_to_log_read' so ...
         if ( empty( $options[ 'ddt_x-tables_per_increment' ] ) ) {
             $options[ 'ddt_x-tables_per_increment' ] = '4';
+        }
+        if ( empty( $options[ 'ddt_x-tables_to_log_read' ] ) ) {
+            $options[ 'ddt_x-tables_to_log_read' ] = [ ];
         }
     }
 
@@ -136,6 +142,9 @@ function ddt_emit_backup_page( ) {
     $suffix     = $options[ 'ddt_x-orig_suffix' ];
     $suffix_len = strlen( $suffix );
     $tables     = array_merge( array_filter( $tables, function( $table ) use ( $suffix, $suffix_len ) {
+        if ( $table === ddt_get_diff_changes_table( ) || $table === ddt_get_status_table( ) ) {
+            return FALSE;
+        }
         return substr_compare( $table, $suffix, -$suffix_len, $suffix_len ) !== 0;
     } ) );
     $orig_tables      = [ ];
@@ -150,8 +159,9 @@ function ddt_emit_backup_page( ) {
         <table class="ddt_x-table_table">
 <?php
     # create a HTML input element embedded in a HTML td element for each database table
-    $mc_backup = DDT_BACKUP;
-    $columns   = DDT_COLS;
+    $mc_backup   = DDT_BACKUP;
+    $mc_log_read = DDT_LOG_READ;
+    $columns     = DDT_COLS;
     # guess how many columns will fit into the page
     $max_len = 0;
     foreach ( $tables as $i => $table ) {
@@ -180,6 +190,7 @@ function ddt_emit_backup_page( ) {
         echo <<<EOD
             <td class="mc_table_td">
                 <input type="checkbox" name="$table" id="$table" class="ddt_x-table_checkbox" value="$mc_backup"$checked>
+                <input type="checkbox" name="{$table}-log_read" id="{$table}-log_read" class="ddt_x-table_checkbox" value="$mc_log_read">
                 <label for="$table">$table</label>
             </td>
 EOD;
@@ -297,6 +308,10 @@ function ddt_get_diff_changes_table( ) {
     return DDT_DIFF_CHANGES_TABLE;
 }
 
+function ddt_get_status_table( ) {
+    return DDT_STATUS_TABLE;
+}
+
 function ddt_in_diff_session( ) {
     global $wpdb;
     return !!$wpdb->get_col( 'SHOW TABLES LIKE "' . ddt_get_diff_changes_table( ) . '"' );
@@ -392,13 +407,13 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_backup_tables() is invoked as a 'wp_ajax_mc_backup_tables' action
     
     add_action( 'wp_ajax_mc_backup_tables', function( ) {
-        $options = ddt_get_options( );
-
         if ( !\wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             \wp_nonce_ays( '' );
         }
 
-        $action = 'backup tables';
+        ddt_set_status( 'request', $_REQUEST );
+        $options      = ddt_get_options( );
+        $action       = 'backup tables';
         $messages     = [ ];
         # extract only table names from HTTP query parameters
         $tables       = array_keys( array_filter( $_REQUEST, function( $value ) {
@@ -406,6 +421,13 @@ if ( defined( 'DOING_AJAX' ) ) {
         } ) );
         if ( !ddt_get_status( 'tables to do' ) ) {
             ddt_set_status( 'tables to do', $tables );
+        }
+        $tables_log_read = array_keys( array_filter( $_REQUEST, function( $value ) {
+            return $value === DDT_LOG_READ;
+        } ) );
+        if ( $tables_log_read != $options[ 'ddt_x-tables_to_log_read' ] ) {
+            $options[ 'ddt_x-tables_to_log_read' ] = $tables_log_read;
+            \update_option( 'ddt_x-wp_db_tools', $options );
         }
         $suffix       = $options[ 'ddt_x-orig_suffix' ];
         $delta        = $_REQUEST[ 'ddt_x-tables_per_increment' ];
@@ -472,8 +494,6 @@ if ( defined( 'DOING_AJAX' ) ) {
     # mc_restore_tables() is invoked as a 'wp_ajax_mc_restore_tables' action
 
     add_action( 'wp_ajax_mc_restore_tables', function( ) {
-        $options = ddt_get_options( );
-
         if ( !wp_verify_nonce( $_REQUEST[ 'ddt_x-nonce' ], 'ddt_x-from_backup' ) ) {
             wp_nonce_ays( '' );
         }
@@ -482,6 +502,8 @@ if ( defined( 'DOING_AJAX' ) ) {
             ddt_wp_db_diff_end_session( );
         }
 
+        ddt_set_status( 'request', $_REQUEST );
+        $options          = ddt_get_options( );
         $action           = 'restore tables';
         # get names of tables that have a backup copy
         $tables           = ddt_backed_up_tables( );
