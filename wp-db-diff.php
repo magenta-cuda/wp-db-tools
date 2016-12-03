@@ -208,7 +208,7 @@ function ddt_wp_db_diff_init( ) {
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
-            if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#i', $last_query, $matches ) ) {
+            if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#is', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
@@ -222,7 +222,7 @@ function ddt_wp_db_diff_init( ) {
                 }
                 if ( !$results ) {
                     # the primary key must have been specified so ...
-                    if ( preg_match ( '#\(\s*((`?\w+`?,\s*)*(`?\w+`?))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#i', $last_query, $matches ) ) {
+                    if ( preg_match ( '#\(\s*((`?\w+`?,\s*)*(`?\w+`?))\s*\)\s*values?\s*\(\s*(.+)\s*\)\s*(on|$)#is', $last_query, $matches ) ) {
                         # parse column names
                         preg_match_all( '#\w+#', $matches[ 1 ], $fields );
                         # find the position of the primary key
@@ -251,7 +251,7 @@ function ddt_wp_db_diff_init( ) {
                         error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );
                     }
                 }
-            } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#i', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#is', $last_query, $matches ) ) {
                 # UPDATE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
@@ -267,7 +267,7 @@ function ddt_wp_db_diff_init( ) {
                     # this can occur when the update changes the value of a field in the where clause
                     #error_log( 'WARNING:ddt_post_query():UPDATE id not known: ' . $last_query );
                 }
-            } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#i', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#is', $last_query, $matches ) ) {
                 # DELETE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
@@ -283,8 +283,8 @@ function ddt_wp_db_diff_init( ) {
                     # this is a delete of a row that was inserted in this session
                     $results = -1;
                 }
-            } else if ( preg_match( '#^\s*select\s+.+\s+from\s*(\s|`)(\w+)\1\s*where\s(.*)$#i', $last_query, $matches ) ) {
-                # SELECT operation
+            } else if ( preg_match( '#^\s*select\s+.+\s+from\s*(\s|`)(\w+)\1\s*where\s(.*)$#is', $last_query, $matches ) ) {
+                # SELECT operation without JOIN
                 $table = $matches[ 2 ];
                 if ( !in_array( $table, $tables_to_log_read ) ) {
                     return;
@@ -304,6 +304,14 @@ function ddt_wp_db_diff_init( ) {
                     # this is a select of a row that was inserted in this session
                     $results = -1;
                 }
+            } else if ( preg_match(
+                '#^\s*select\s+(.+)\s+from\s+(((`?)(\w+)\4\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*)+(`?)(\w+)\9)\s+((on|where)\s+.*)$#is',
+                #              1  1          234  45   5     6    78                                            8   7       6   3 9  9A   A  2   BC        C     B 
+                $last_query, $matches
+            ) ) {
+                # SELECT operation with JOIN
+                error_log( 'TODO::SELECT with JOIN:$last_query=' . $last_query );
+                error_log( 'TODO::SELECT with JOIN:$matches=' . print_r( $matches, true ) );
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
