@@ -3,24 +3,37 @@ jQuery( document ).ready( function( ) {
     //var workingText = "working...\n";
     var workingText = "";
 
-    // convenience buttons to select or clear all checkboxes
+    // only enable log read checkboxes if matching backup checkbox is checked
     
+    function syncLogReadCheckboxWithBackupCheckbox( backupCheckboxes ) {
+        backupCheckboxes.each( function( ) {
+            var backupCheckbox = jQuery( this );
+            var logReadCheckbox = backupCheckbox.parents( "td.mc_table_td" ).find( "input.ddt_x-table_log_read" );
+            logReadCheckbox.prop( "disabled", !backupCheckbox.prop( "checked" ) );
+        } );
+    }
+
+    syncLogReadCheckboxWithBackupCheckbox( jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ) );
+    
+    // convenience buttons to select or clear all checkboxes
+
     jQuery( "button#ddt_x-select_all_btn" ).click( function( e ) {
-        jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", true );
+        syncLogReadCheckboxWithBackupCheckbox( jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", true ) );
         jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", false );
         e.preventDefault( );
     } );
 
     jQuery( "button#ddt_x-clear_all_btn" ).click( function( e ) {
-        jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", false );
+        syncLogReadCheckboxWithBackupCheckbox( jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup" ).prop( "checked", false ) );
         jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", true );
         e.preventDefault( );
     } );
     
     // enable backup button only if a table is selected
     
-    jQuery( "input.ddt_x-table_checkbox[type='checkbox']" ).change( function( e ) {
+    jQuery( "input.ddt_x-table_checkbox.ddt_x-table_backup[type='checkbox']" ).change( function( e ) {
         jQuery( "div#ddt_x-main_buttons button#ddt_x-backup" ).prop( "disabled", jQuery( "input.ddt_x-table_checkbox:checked" ).length === 0 );
+        syncLogReadCheckboxWithBackupCheckbox( jQuery( this ) );
     } );
 
     // submit form only on the click of backup button, i.e. ignore CR on form elements
