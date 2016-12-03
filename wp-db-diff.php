@@ -379,17 +379,20 @@ No database operations have been done on the selected tables.
                         $tables[ $table_name ][ 'INSERT' ] = [ ];
                         $tables[ $table_name ][ 'UPDATE' ] = [ ];
                         $tables[ $table_name ][ 'DELETE' ] = [ ];
+                        $tables[ $table_name ][ 'SELECT' ] = [ ];
                     }
                     $ids =& $tables[ $table_name ][ $operation ];
                     $ids = array_merge( $ids, $row_ids );
                 }
-                echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th></tr></thead><tbody>'; 
+                echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th><th>Selects</th></tr></thead><tbody>'; 
                 foreach ( $tables as $table_name => $table ) {
                     $table_id = get_table_id( $table_name, TRUE );
                     $inserts  = array_unique( $table[ 'INSERT' ] );
                     $deletes  = array_unique( $table[ 'DELETE' ] );
+                    $selects  = array_unique( $table[ 'SELECT' ] );
                     $inserts  = stringify_ids( $inserts );
                     $deletes  = stringify_ids( $deletes );
+                    $selects  = stringify_ids( $selects );
                     if ( $inserts ) {
                         # get the deleted inserts which are not yet included in $deletes
                         $existing_inserts = $wpdb->get_col( "SELECT $table_id FROM $table_name WHERE $table_id IN ( " . implode( ', ', $inserts ) . ' )' );
@@ -407,7 +410,11 @@ No database operations have been done on the selected tables.
                     $inserts     = count( $inserts );
                     $updates     = count( $updates );
                     $deletes     = count( $deletes );
-                    echo "<tr><td>$table_name<input type=\"checkbox\"></td><td>$inserts<input type=\"checkbox\"></td><td>$updates<input type=\"checkbox\"></td><td>$deletes<input type=\"checkbox\"></td></tr>";
+                    $selects     = count( $selects );
+                    echo <<<EOD
+<tr><td>$table_name<input type="checkbox"></td><td>$inserts<input type="checkbox"></td><td>$updates<input type="checkbox"></td><td>$deletes<input type="checkbox"></td>
+<td>$selects<input type="checkbox"></td></tr>
+EOD;
                 }
                 echo '</tbody></table>';
                 echo '<div id="ddt_x-diff_controls">';
@@ -462,15 +469,16 @@ No database operations have been done on the selected tables.
             $operation  = str_replace( 'Inserts', 'INSERT', $operation );
             $operation  = str_replace( 'Updates', 'UPDATE', $operation );
             $operation  = str_replace( 'Deletes', 'DELETE', $operation );
+            $operation  = str_replace( 'Selects', 'SELECT', $operation );
             # remove any invalid operation tags
             $operation  = array_filter( $operation, function( $v ) {
-                return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE' ] );
+                return in_array( $v, [ 'INSERT', 'UPDATE', 'DELETE', 'SELECT' ] );
             } );
             $width      = !empty( $options[ 'ddt_x-table_width'      ][ $table ] ) ? $options[ 'ddt_x-table_width'      ][ $table ] : '';
             $cell_size  = !empty( $options[ 'ddt_x-table_cell_size'  ][ $table ] ) ? $options[ 'ddt_x-table_cell_size'  ][ $table ] : '';
             $sort_order = !empty( $options[ 'ddt_x-table_sort_order' ][ $table ] ) ? $options[ 'ddt_x-table_sort_order' ][ $table ] : '';
             $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( )
-                              . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s' ], 0, count( $operation ) ) )
+                              . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s', '%s' ], 0, count( $operation ) ) )
                               . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
 ?>
 <div class="ddt_x-info_message">
@@ -486,6 +494,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'INSERT' ] = [ ];
             $ids[ 'UPDATE' ] = [ ];
             $ids[ 'DELETE' ] = [ ];
+            $ids[ 'SELECT' ] = [ ];
             foreach ( $results as $result ) {
                 $row_ids = $result->row_ids;
                 if ( is_serialized( $row_ids ) ) {
@@ -499,9 +508,11 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'INSERT' ] = array_unique( $ids[ 'INSERT' ] );
             $ids[ 'UPDATE' ] = array_unique( $ids[ 'UPDATE' ] );
             $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
+            $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
             sort( $ids[ 'INSERT' ] );
             sort( $ids[ 'UPDATE' ] );
             sort( $ids[ 'DELETE' ] );
+            sort( $ids[ 'SELECT' ] );
             foreach ( $ids as &$id ) {
                 $id = stringify_ids( $id );
             }
@@ -512,6 +523,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'INSERT' ] = array_diff( $ids[ 'INSERT' ], $ids[ 'DELETE' ] );
             # remove inserted rows from deleted rows as the net effect for the session is the insert/delete did not occur
             $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
+            $ids[ 'SELECT' ] = array_diff( $ids[ 'SELECT' ], $ids[ 'INSERT' ] );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             foreach ( get_table_id( $table ) as $table_id ) {
                 $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
@@ -535,6 +547,10 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                 $deletes   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'DELETE' ] ) . ' )', OBJECT_K );
             }
+            if ( $ids[ 'SELECT' ] ) {
+                $selects   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
+                                                    . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'SELECT' ] ) . ' )', OBJECT_K );
+            }
             echo '<div id="ddt_x-table_changes_container"><table class="ddt_x-table_changes mc_table_changes tablesorter"><thead><tr><th>Row Status</th>';
             foreach ( $columns as $column ) {
                 if ( strpos( $column, 'CONCAT(' ) === 0 ) {
@@ -547,21 +563,30 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $insert_ids = $ids[ 'INSERT' ];
             $update_ids = $ids[ 'UPDATE' ];
             $delete_ids = $ids[ 'DELETE' ];
+            $select_ids = $ids[ 'SELECT' ];
             while ( TRUE ) {
                 $insert_id = current( $insert_ids );
                 $update_id = current( $update_ids );
                 $delete_id = current( $delete_ids );
-                if ( $insert_id === FALSE && $update_id === FALSE && $delete_id === FALSE ) {
+                $select_id = current( $select_ids );
+                if ( $insert_id === FALSE && $update_id === FALSE && $delete_id === FALSE && $select_id === FALSE ) {
                     break;
                 }
-                if ( $insert_id !== FALSE && ( $update_id === FALSE || $insert_id < $update_id ) && ( $delete_id === FALSE || $insert_id < $delete_id ) ) {
+                if ( $insert_id !== FALSE && ( $update_id === FALSE || $insert_id < $update_id ) && ( $delete_id === FALSE || $insert_id < $delete_id )
+                    && ( $select_id === FALSE || $insert_id < $select_id ) ) {
                     $operation = 'INSERT';
                     $id = $insert_id;
                     next( $insert_ids );
-                } else if ( $update_id !== FALSE && ( $insert_id === FALSE || $update_id < $insert_id ) && ( $delete_id === FALSE || $update_id < $delete_id ) ) {
+                } else if ( $update_id !== FALSE && ( $insert_id === FALSE || $update_id < $insert_id ) && ( $delete_id === FALSE || $update_id < $delete_id )
+                    && ( $select_id === FALSE || $update_id < $select_id ) ) {
                     $operation  = 'UPDATE';
                     $id = $update_id;
                     next( $update_ids );
+                } else if ( $select_id !== FALSE && ( $insert_id === FALSE || $select_id < $insert_id ) && ( $update_id === FALSE || $select_id < $update_id )
+                    && ( $delete_id === FALSE || $select_id < $delete_id ) ) {
+                    $operation  = 'SELECT';
+                    $id = $select_id;
+                    next( $select_ids );
                 } else {
                     $operation = 'DELETE';
                     $id = $delete_id;
@@ -603,6 +628,17 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     foreach ( $columns as $column ) {
                         $td_class = strcmp( $originals[ $id ]->$column, $updates[ $id ]->$column ) ? ' class="ddt_x-field_changed"' : '';
                         echo '<td' . $td_class . '>' . ddt_wp_db_diff_prettify( $update->$column ) . '</td>';
+                    }
+                    echo "</tr>\n";
+                } else if ( $operation === 'SELECT' ) {
+                    if ( !array_key_exists( $id, $selects ) ) {
+                        continue;
+                    }
+                    echo '<tr class="ddt_x-changes_original">';
+                    echo '<td>SELECTED</td>';
+                    $select = $selects[ $id ];
+                    foreach ( $columns as $column ) {
+                        echo '<td>' . ddt_wp_db_diff_prettify( $select->$column ) . '</td>';
                     }
                     echo "</tr>\n";
                 } else if ( $operation === 'DELETE' ) {
