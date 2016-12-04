@@ -163,15 +163,23 @@ function ddt_wp_db_diff_init( ) {
         return $disable_query_filter;
     }
     
-    function get_table_id( $table, $for_sql = FALSE ) {
+    function get_table_id( $table, $for_sql = FALSE, $qualifier = NULL ) {
         $id = ddt_id_for_table( )[ $table ];
         if ( !$for_sql ) {
             return $id;
-        } else if ( count( $id ) === 1 ) {
-            return $id[ 0 ];
+        }
+        if ( $qualifier ) {
+            $qualifier .= '.';
+        } else {
+            $qualifier = '';
+        }
+        if ( count( $id ) === 1 ) {
+            return $qualifier.$id[ 0 ];
         }
         # for multiple primary keys use CONCAT to create a single key
-        return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', $id ) . ' )';
+        return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', array_map( function( $id ) {
+            return $qualifier . $id;
+        }, $id ) ) . ' )';
     }
 
     function stringify_ids( $ids ) {
@@ -312,6 +320,21 @@ function ddt_wp_db_diff_init( ) {
                 # SELECT operation with JOIN
                 error_log( 'TODO::SELECT with JOIN:$last_query=' . $last_query );
                 error_log( 'TODO::SELECT with JOIN:$matches=' . print_r( $matches, true ) );
+                $tables = $matches[ 2 ];
+                $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
+                $tables = explode( ',', $tables );
+                error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );                
+                $table_id = [ ];
+                array_walk( $tables, function( $table ) use ( &$table_id ) {
+                    if ( strpos( $table, ' ' ) ) {
+                        $pair = explode( ' ', $table );
+                        $table_id[ $pair[ 0 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 0 ] );
+                        $table_id[ $pair[ 1 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 1 ] );
+                    } else {
+                        $table_id[ $table ]     = get_table_id( $table,     TRUE, $table );
+                    }
+                } );
+                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );                
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
