@@ -299,14 +299,11 @@ function ddt_wp_db_diff_init( ) {
                 }
                 $operation      = 'SELECT';
                 $where          = $matches[ 3 ];
-                error_log( '$where=' . $where );
                 # fix fields with table name prefix
                 $where = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
-                error_log( '$where=' . $where );
                 $id             = get_table_id( $table, TRUE );
                 $doing_my_query = TRUE;
                 $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
-                error_log( '$results=' . print_r( $results, true ) );
                 $doing_my_query = FALSE;
                 if ( !$results ) {
                     # this is a select of a row that was inserted in this session
@@ -325,16 +322,29 @@ function ddt_wp_db_diff_init( ) {
                 $tables = explode( ',', $tables );
                 error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );                
                 $table_id = [ ];
-                array_walk( $tables, function( $table ) use ( &$table_id ) {
+                array_walk( $tables, function( $table ) use ( &$table_id, $suffix ) {
                     if ( strpos( $table, ' ' ) ) {
                         $pair = explode( ' ', $table );
+                        # TODO: maybe need to use original tables here?
                         $table_id[ $pair[ 0 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 0 ] );
                         $table_id[ $pair[ 1 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 1 ] );
                     } else {
                         $table_id[ $table ]     = get_table_id( $table,     TRUE, $table );
                     }
                 } );
-                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );                
+                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
+                preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields );
+                # TODO: aliases
+                error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
+                $fields = array_unique( array_map( function( $table ) use ( $table_id, $fields ) {
+                    if ( $table ) {
+                        return $table_id[ $table ];
+                    } else {
+                        # TODO: column name without table qualifter
+                        error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
+                    }
+                }, $fields[ 2 ] ) );
+                error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
