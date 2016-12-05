@@ -320,27 +320,32 @@ function ddt_wp_db_diff_init( ) {
                 $tables = $matches[ 2 ];
                 $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
                 $tables = explode( ',', $tables );
-                error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );                
-                $table_id = [ ];
-                array_walk( $tables, function( $table ) use ( &$table_id, $suffix ) {
+                error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );
+                $table_id      = [ ];
+                $table_aliases = [ ];
+                array_walk( $tables, function( $table ) use ( &$table_id, &$table_aliases, $suffix ) {
                     if ( strpos( $table, ' ' ) ) {
                         $pair = explode( ' ', $table );
-                        # TODO: maybe need to use original tables here?
-                        $table_id[ $pair[ 0 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 0 ] );
-                        $table_id[ $pair[ 1 ] ] = get_table_id( $pair[ 0 ], TRUE, $pair[ 1 ] );
+                        $table_aliases[ $pair[ 1 ] ] = $pair[ 0 ];
+                        $table_id[ $pair[ 0 ] ]      = get_table_id( $pair[ 0 ], TRUE, $pair[ 0 ] );
+                        $table_id[ $pair[ 1 ] ]      = get_table_id( $pair[ 0 ], TRUE, $pair[ 1 ] );
                     } else {
                         $table_id[ $table ]     = get_table_id( $table,     TRUE, $table );
                     }
                 } );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
                 preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields );
-                # TODO: aliases
+                # TODO: expressions
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
-                $fields = array_unique( array_map( function( $table ) use ( $table_id, $fields ) {
+                $fields = array_unique( array_map( function( $table ) use ( $table_id, $table_aliases, $suffix, $fields ) {
                     if ( $table ) {
-                        return $table_id[ $table ];
+                        if ( isset( $table_aliases[ $table ] ) ) {
+                            return $table_id[ $table ];
+                        } else {
+                            return str_replace( '.', "{$suffix}.", $table_id[ $table ] );
+                        }
                     } else {
-                        # TODO: column name without table qualifter
+                        # TODO: column name without table qualifier
                         error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
                     }
                 }, $fields[ 2 ] ) );
