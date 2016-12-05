@@ -56,14 +56,15 @@ jQuery( document ).ready( function( ) {
             log.text( text );
             if ( text.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
                 var buttons = jQuery( "div#ddt_x-main_buttons" );
-                buttons.find( "button#ddt_x-restore"       ).prop( "disabled", false );
-                buttons.find( "button#ddt_x-delete"        ).prop( "disabled", false );
-                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", !jQuery( "input#ddt_x-enable_diff" ).prop( "checked" ) );
-                jQuery( "fieldset#ddt_x-table_fields"      ).prop( "disabled", true  );
+                buttons.find( "button#ddt_x-restore"             ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-delete"              ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-diff_tool"           ).prop( "disabled", !jQuery( "input#ddt_x-enable_diff" ).prop( "checked" ) );
+                jQuery( "fieldset#ddt_x-table_fields"            ).prop( "disabled", true  );
                 var options = jQuery( "fieldset#mc_db_tools_options" );
-                options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", true  );
-                options.find( "button#ddt_x-suffix_verify" ).prop( "disabled", true  );
-                options.find( "input#ddt_x-enable_diff"    ).prop( "disabled", true  );
+                options.find( "input#ddt_x-backup_suffix"        ).prop( "disabled", true  );
+                options.find( "button#ddt_x-suffix_verify"       ).prop( "disabled", true  );
+                options.find( "input#ddt_x-tables_per_increment" ).prop( "disabled", true  );
+                options.find( "input#ddt_x-enable_diff"          ).prop( "disabled", true  );
             } else {
                 backupTables( response.data.tables_to_do );
             }
@@ -124,16 +125,17 @@ jQuery( document ).ready( function( ) {
         jQuery.post( ajaxurl, { action: "mc_delete_backup", 'ddt_x-nonce': jQuery( "input#ddt_x-nonce" ).val( ) }, function ( response ) {
             jQuery( "#mc_status" ).text( response );
             if ( response.indexOf( ddt_xPhpData.DDT_SUCCESS ) !== -1 ) {
-                buttons.find( "button#ddt_x-backup"        ).prop( "disabled", false );
-                buttons.find( "button#ddt_x-restore"       ).prop( "disabled", true  );
-                buttons.find( "button#ddt_x-diff_tool"     ).prop( "disabled", true  );
-                jQuery( "fieldset#ddt_x-table_fields"      ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-backup"              ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-restore"             ).prop( "disabled", true  );
+                buttons.find( "button#ddt_x-diff_tool"           ).prop( "disabled", true  );
+                jQuery( "fieldset#ddt_x-table_fields"            ).prop( "disabled", false );
                 var options = jQuery( "fieldset#mc_db_tools_options" );
-                options.find( "input#ddt_x-backup_suffix"  ).prop( "disabled", false );
-                options.find( "button#ddt_x-suffix_verify" ).prop( "disabled", false );
-                options.find( "input#ddt_x-enable_diff"    ).prop( "disabled", false );
+                options.find( "input#ddt_x-backup_suffix"        ).prop( "disabled", false );
+                options.find( "button#ddt_x-suffix_verify"       ).prop( "disabled", false );
+                options.find( "input#ddt_x-tables_per_increment" ).prop( "disabled", false );
+                options.find( "input#ddt_x-enable_diff"          ).prop( "disabled", false );
             } else {
-                buttons.find( "button#ddt_x-delete"        ).prop( "disabled", false );
+                buttons.find( "button#ddt_x-delete"              ).prop( "disabled", false );
             }
         } );
     } );
