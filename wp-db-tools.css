@@ -111,6 +111,8 @@ table.mc_table_changes th {
   text-align: center; }
 table.ddt_x-table_changes tr.ddt_x-changes_original {
   background-color: #FFECEC; }
+  table.ddt_x-table_changes tr.ddt_x-changes_original.ddt_x-selected {
+    background-color: #DDD; }
   table.ddt_x-table_changes tr.ddt_x-changes_original td.ddt_x-field_changed {
     background-color: #F8CBCB; }
 table.ddt_x-table_changes tr.ddt_x-changes_updated {

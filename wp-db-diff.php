@@ -665,7 +665,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
                     if ( !array_key_exists( $id, $selects ) ) {
                         continue;
                     }
-                    echo '<tr class="ddt_x-changes_original">';
+                    echo '<tr class="ddt_x-changes_original ddt_x-selected">';
                     echo '<td>SELECTED</td>';
                     $select = $selects[ $id ];
                     foreach ( $columns as $column ) {

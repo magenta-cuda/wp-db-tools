@@ -168,7 +168,11 @@ table {
   
     &.ddt_x-changes_original {
       background-color: #FFECEC;
-      
+
+      &.ddt_x-selected {
+        background-color:#DDD;
+      }
+
       td.ddt_x-field_changed {
         background-color: #F8CBCB;
       }
