@@ -310,8 +310,8 @@ function ddt_wp_db_diff_init( ) {
                     $results = -1;
                 }
             } else if ( preg_match(
-                '#^\s*select\s+(.+)\s+from\s+(((`?)(\w+)\4\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*)+(`?)(\w+)\9)\s+((on|where)\s+.*)$#is',
-                #              1  1          234  45   5     6    78                                            8   7       6   3 9  9A   A  2   BC        C     B 
+                '#^\s*select\s+(.+)\s+from\s+(((`?)(\w+)\4(\s+(as\s+)?\w+)?\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*)+(`?)(\w+)\11(\s+(as\s+)?\w+)?)\s+((on|where)\s+.*)$#is',
+                #              1  1          234  45   5  6   7     7    6    8    9A                                            A   9       8   3 B  BC   C   D   E     E    D 2   FG        G     F 
                 $last_query, $matches
             ) ) {
                 # SELECT operation with JOIN
@@ -368,10 +368,10 @@ function ddt_wp_db_diff_init( ) {
                 }, $backup_table_names );
                 error_log( 'TODO::SELECT with JOIN:$table_names=' . print_r( $table_names, true ) );
                 error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
-                $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 11 ] ) . ' ';
+                $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 15 ] ) . ' ';
                 error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
                 $doing_my_query = TRUE;
-                $results        = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_A );
+                $results        = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_N );
                 $doing_my_query = FALSE;
                 error_log( 'TODO::SELECT with JOIN:$results=' . print_r( $results, true ) );
                 $ids = [ ];
