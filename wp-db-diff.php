@@ -321,16 +321,19 @@ function ddt_wp_db_diff_init( ) {
                 $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
                 $tables = explode( ',', $tables );
                 error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );
+                $table_names   = [ ];
                 $table_id      = [ ];
                 $table_aliases = [ ];
-                array_walk( $tables, function( $table ) use ( &$table_id, &$table_aliases, $suffix ) {
+                array_walk( $tables, function( $table ) use ( &$table_names, &$table_id, &$table_aliases, $suffix ) {
                     if ( strpos( $table, ' ' ) ) {
                         $pair = explode( ' ', $table );
+                        $table_names[ ]              = $pair[ 0 ];
                         $table_aliases[ $pair[ 1 ] ] = $pair[ 0 ];
                         $table_id[ $pair[ 0 ] ]      = get_table_id( $pair[ 0 ], TRUE, $pair[ 0 ] );
                         $table_id[ $pair[ 1 ] ]      = get_table_id( $pair[ 0 ], TRUE, $pair[ 1 ] );
                     } else {
-                        $table_id[ $table ]     = get_table_id( $table,     TRUE, $table );
+                        $table_names[ ]              = $table;
+                        $table_id[ $table ]          = get_table_id( $table,     TRUE, $table );
                     }
                 } );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
@@ -350,6 +353,23 @@ function ddt_wp_db_diff_init( ) {
                     }
                 }, $fields[ 2 ] ) );
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
+                $backup_table_names = array_map( function( $name ) use ( $suffix ) {
+                    return "{$name}{$suffix}";
+                }, $table_names );
+                error_log( 'TODO::SELECT with JOIN:$table_names=' . print_r( $table_names, true ) );
+                error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
+                $from_clause = ' FROM ' . str_replace( $table_names, $backup_table_names, $matches[ 2 ] ) . ' ';
+                error_log( 'TODO::SELECT with JOIN:$from_clause=' . $from_clause );
+                $table_names = array_map( function( $name ) use ( $suffix ) {
+                    return "{$name}.";
+                }, $table_names );
+                $backup_table_names = array_map( function( $name ) use ( $suffix ) {
+                    return "{$name}.";
+                }, $backup_table_names );
+                error_log( 'TODO::SELECT with JOIN:$table_names=' . print_r( $table_names, true ) );
+                error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
+                $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 11 ] ) . ' ';
+                error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
