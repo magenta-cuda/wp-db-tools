@@ -370,6 +370,25 @@ function ddt_wp_db_diff_init( ) {
                 error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
                 $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 11 ] ) . ' ';
                 error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
+                $doing_my_query = TRUE;
+                $results        = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_A );
+                $doing_my_query = FALSE;
+                error_log( 'TODO::SELECT with JOIN:$results=' . print_r( $results, true ) );
+                $ids = [ ];
+                foreach ( $results as $result ) {
+                    reset( $result );
+                    foreach ( $fields as $field ) {
+                        $table = str_replace( $suffix, '', substr( $field, 0, strpos( $field, '.' ) ) );
+                        if ( !isset( $ids[ $table ] ) ) {
+                            $ids[ $table ] = [ ];
+                        }
+                        $ids[ $table ][ ] = current( $result );
+                        next( $result );
+                    }
+                }
+                error_log( 'TODO::SELECT with JOIN:$ids=' . print_r( $ids, true ) );
+                # TODO: results are not compatible with the logging code below
+                $results = NULL;
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
