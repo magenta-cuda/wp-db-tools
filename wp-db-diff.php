@@ -336,11 +336,12 @@ function ddt_wp_db_diff_init( ) {
                         $table_id[ $table ]          = get_table_id( $table,     TRUE, $table );
                     }
                 } );
+                $table_aliases_flip = array_flip( $table_aliases );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
                 preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
                 # TODO: expressions
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
-                $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $suffix, &$doing_my_query ) {
+                $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix, &$doing_my_query ) {
                     global $wpdb;
                     $table = $match[ 2 ];
                     if ( $table ) {
@@ -357,7 +358,11 @@ function ddt_wp_db_diff_init( ) {
                             $columns        = $wpdb->get_col( "show columns from $table_name" );
                             $doing_my_query = FALSE;
                             if ( in_array( $match[ 3 ], $columns ) ) {
-                                return str_replace( '.', "{$suffix}.", $table_id[ $table_name ] );
+                                if ( isset( $table_aliases_flip[ $table_name ] ) ) {
+                                    return $table_id[ $table_aliases_flip[ $table_name ] ];
+                                } else {
+                                    return str_replace( '.', "{$suffix}.", $table_id[ $table_name ] );
+                                }
                             }
                         }
                         return null;
