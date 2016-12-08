@@ -18,7 +18,7 @@ EOD
     }
     if ( false ) {
         $wpdb->query( <<<EOD
-SELECT t.name, x.taxonomy, r.object_id
+SELECT t.name, x.taxonomy, object_id
     FROM $wpdb->terms t, $wpdb->term_taxonomy x, $wpdb->term_relationships r
     WHERE t.term_id = x.term_id AND x.term_taxonomy_id = r.term_taxonomy_id AND r.object_id = 177
 EOD

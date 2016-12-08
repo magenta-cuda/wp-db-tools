@@ -337,10 +337,12 @@ function ddt_wp_db_diff_init( ) {
                     }
                 } );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
-                preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields );
+                preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
                 # TODO: expressions
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
-                $fields = array_unique( array_map( function( $table ) use ( $table_id, $table_aliases, $suffix, $fields ) {
+                $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $suffix, &$doing_my_query ) {
+                    global $wpdb;
+                    $table = $match[ 2 ];
                     if ( $table ) {
                         if ( isset( $table_aliases[ $table ] ) ) {
                             return $table_id[ $table ];
@@ -348,10 +350,19 @@ function ddt_wp_db_diff_init( ) {
                             return str_replace( '.', "{$suffix}.", $table_id[ $table ] );
                         }
                     } else {
-                        # TODO: column name without table qualifier
+                        # column name without table qualifier should belong to exactly one table
                         error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
+                        foreach ( $table_names as $table_name ) {
+                            $doing_my_query = TRUE;
+                            $columns        = $wpdb->get_col( "show columns from $table_name" );
+                            $doing_my_query = FALSE;
+                            if ( in_array( $match[ 3 ], $columns ) ) {
+                                return str_replace( '.', "{$suffix}.", $table_id[ $table_name ] );
+                            }
+                        }
+                        return null;
                     }
-                }, $fields[ 2 ] ) );
+                }, $fields ) ) );
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
                 $backup_table_names = array_map( function( $name ) use ( $suffix ) {
                     return "{$name}{$suffix}";
