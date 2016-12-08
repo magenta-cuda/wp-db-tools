@@ -177,7 +177,7 @@ function ddt_wp_db_diff_init( ) {
             return $qualifier.$id[ 0 ];
         }
         # for multiple primary keys use CONCAT to create a single key
-        return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', array_map( function( $id ) {
+        return 'CONCAT( ' . implode( ', "' . DDT_CONCAT_OP . '", ', array_map( function( $id ) use ( $qualifier ) {
             return $qualifier . $id;
         }, $id ) ) . ' )';
     }
@@ -378,11 +378,14 @@ function ddt_wp_db_diff_init( ) {
                 foreach ( $results as $result ) {
                     reset( $result );
                     foreach ( $fields as $field ) {
-                        $table = str_replace( $suffix, '', substr( $field, 0, strpos( $field, '.' ) ) );
-                        if ( !isset( $ids[ $table ] ) ) {
-                            $ids[ $table ] = [ ];
+                        if ( preg_match( '#(\w+)\.#', $field, $matches ) ) {
+                            $table = str_replace( $suffix, '', $matches[ 1 ] );
+                            $table = !empty( $table_aliases[ $table ] ) ? $table_aliases[ $table ] : $table;
+                            if ( !isset( $ids[ $table ] ) ) {
+                                $ids[ $table ] = [ ];
+                            }
+                            $ids[ $table ][ ] = current( $result );
                         }
-                        $ids[ $table ][ ] = current( $result );
                         next( $result );
                     }
                 }
