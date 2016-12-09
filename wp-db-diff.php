@@ -204,7 +204,7 @@ function ddt_wp_db_diff_init( ) {
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
-            $regex_of_tables_orig = '#(\s|`)(' . implode( '|', $backed_up_tables ) . ')\1#';
+            $regex_of_tables_orig = '#\sFROM\s+(`?)(' . implode( '|', $backed_up_tables ) . ')\1(\s|,)#is';
         }
  
         static $doing_my_query = FALSE;
