@@ -204,8 +204,11 @@ function ddt_wp_db_diff_init( ) {
 
         static $regex_of_tables_orig = NULL;
         if ( !$regex_of_tables_orig ) {
-            $regex_of_tables_orig = '#\sFROM\s+(`?)(' . implode( '|', $backed_up_tables ) . ')\1(\s|,)#is';
-        }
+            $regex_of_tables_orig
+                = '#(^|\s)(FROM|(UPDATE(\s+LOW_PRIORITY|\s+IGNORE){0,2})|((INSERT|REPLACE)(\s+LOW_PRIORITY|\s+DELAYED|\s+HIGH_PRIORITY|\s+IGNORE){0,4}(\s+INTO)?))\s+(`?)('
+                  /*1     2     3      4                                 56               7                                                           8              9   */   
+                    . implode( '|', $backed_up_tables ) . ')\9(\s|,)#is';
+            }
  
         static $doing_my_query = FALSE;
         if ( $doing_my_query ) {
@@ -215,6 +218,7 @@ function ddt_wp_db_diff_init( ) {
 
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
+        error_log( '$last_query=' . $last_query );
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
             if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#is', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
@@ -291,7 +295,7 @@ function ddt_wp_db_diff_init( ) {
                     # this is a delete of a row that was inserted in this session
                     $results = -1;
                 }
-            } else if ( preg_match( '#^\s*select\s+.+\s+from\s*(\s|`)(\w+)\1\s*where\s(.*)$#is', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*select\s+.+\s+from\s+(`?)(\w+)\1\s+where\s+(.*)$#is', $last_query, $matches ) ) {
                 # SELECT operation without JOIN
                 $table = $matches[ 2 ];
                 if ( !in_array( $table, $tables_to_log_read ) ) {
@@ -338,7 +342,7 @@ function ddt_wp_db_diff_init( ) {
                 } );
                 $table_aliases_flip = array_flip( $table_aliases );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
-                preg_match_all( '#((\w+)\.)?(\w+)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
+                preg_match_all( '#((\w+)\.)?(\w+|\*)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
                 # TODO: expressions
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
                 $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix, &$doing_my_query ) {
@@ -568,6 +572,7 @@ EOD;
             }
             $suffix     = $options[ 'ddt_x-orig_suffix' ];
             $table      = $_POST[ 'table' ];
+            $table_id   = get_table_id( $table, TRUE );
             $operation  = explode( ',', $_POST[ 'operation' ] );
             # replace pretty header labels for operation with the operation tag
             $operation  = str_replace( 'Inserts', 'INSERT', $operation );
@@ -581,9 +586,8 @@ EOD;
             $width      = !empty( $options[ 'ddt_x-table_width'      ][ $table ] ) ? $options[ 'ddt_x-table_width'      ][ $table ] : '';
             $cell_size  = !empty( $options[ 'ddt_x-table_cell_size'  ][ $table ] ) ? $options[ 'ddt_x-table_cell_size'  ][ $table ] : '';
             $sort_order = !empty( $options[ 'ddt_x-table_sort_order' ][ $table ] ) ? $options[ 'ddt_x-table_sort_order' ][ $table ] : '';
-            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( )
-                              . ' WHERE table_name = %s AND operation IN ( ' . implode( ', ', array_slice( [ '%s', '%s', '%s', '%s' ], 0, count( $operation ) ) )
-                              . ' ) ORDER BY operation', array_merge( [ $table ], $operation ) ) );
+            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( ) . ' WHERE table_name = %s ORDER BY operation',
+                                              $table ) );
 ?>
 <div class="ddt_x-info_message">
 Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.
@@ -613,10 +617,13 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'UPDATE' ] = array_unique( $ids[ 'UPDATE' ] );
             $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
             $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
-            sort( $ids[ 'INSERT' ] );
-            sort( $ids[ 'UPDATE' ] );
-            sort( $ids[ 'DELETE' ] );
-            sort( $ids[ 'SELECT' ] );
+            $changed_ids     = array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) );
+            $original_ids    = $wpdb->get_results( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )', OBJECT_K );
+            $current_ids     = $wpdb->get_results( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )', OBJECT_K );
+            $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? sort( array_diff( $current_ids, $original_ids ) )                          : [ ];
+            $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? sort( array_intersect( $current_ids, $original_ids ) )                     : [ ];
+            $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? sort( array_diff( $original_ids, $current_ids ) )                          : [ ];
+            $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? sort( array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) ) : [ ];
             foreach ( $ids as &$id ) {
                 $id = stringify_ids( $id );
             }
@@ -629,14 +636,13 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
             $ids[ 'SELECT' ] = array_diff( $ids[ 'SELECT' ], $ids[ 'INSERT' ] );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
-            foreach ( get_table_id( $table ) as $table_id ) {
-                $columns = array_filter( $columns, function( $v ) use ( $table_id ) {
-                    return $v !== $table_id;
+            foreach ( get_table_id( $table ) as $table_key ) {
+                $columns = array_filter( $columns, function( $v ) use ( $table_key ) {
+                    return $v !== $table_key;
                 } );
             }
-            array_unshift( $columns, get_table_id( $table, TRUE ) );
+            array_unshift( $columns, $table_id );
             $columns_imploded = implode( ', ', $columns );
-            $table_id = get_table_id( $table, TRUE );
             if (  $ids[ 'INSERT' ] ) {
                 $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
