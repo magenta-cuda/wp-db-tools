@@ -441,6 +441,57 @@ function ddt_wp_db_diff_init( ) {
         ddt_post_query( );
     } );
     
+    # ddt_get_inserts_updates_deletes_selects() returns the primary keys of rows in table $table for SQL operations in the array $operation.
+    # e.g. ddt_get_inserts_updates_deletes_selects( 'wp_posts', [ 'INSERT', 'UPDATE' ] )
+    # the returned result is an array of arrays where the primary index is an SQL operation, e.g. 'INSERT', 'UPDATE', ...
+
+    function ddt_get_inserts_updates_deletes_selects( $table, $operation ) {
+        global $wpdb;
+        $suffix          = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
+        $table_id        = get_table_id( $table, TRUE );
+        $results         = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( ) . ' WHERE table_name = %s ORDER BY operation',
+                                               $table ) );
+        $ids             = [ ];
+        $ids[ 'INSERT' ] = [ ];
+        $ids[ 'UPDATE' ] = [ ];
+        $ids[ 'DELETE' ] = [ ];
+        $ids[ 'SELECT' ] = [ ];
+        foreach ( $results as $result ) {
+            $row_ids = $result->row_ids;
+            if ( is_serialized( $row_ids ) ) {
+                $row_ids = unserialize( $row_ids );
+            } else {
+                $row_ids = [ $row_ids ];
+            }
+            $idsr =& $ids[ $result->operation ];
+            $idsr = array_merge( $idsr, $row_ids );
+        }
+        $ids[ 'INSERT' ] = array_unique( $ids[ 'INSERT' ] );
+        $ids[ 'UPDATE' ] = array_unique( $ids[ 'UPDATE' ] );
+        $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
+        $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
+        $changed_ids     = array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) );
+        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$change_ids=' . print_r( $change_ids, true ) );
+        $original_ids    = $wpdb->get_col( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+        $current_ids     = $wpdb->get_col( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$original_ids=' . print_r( $original_ids, true ) );
+        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$current_ids=' . print_r( $current_ids, true ) );
+        $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )                           : [ ];
+        $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? array_intersect( $current_ids, $original_ids )                      : [ ];
+        $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? array_diff( $original_ids, $current_ids )                           : [ ];
+        $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] )  : [ ];
+        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
+        foreach ( $ids as &$id ) {
+            $id = stringify_ids( $id );
+        }
+        sort( $ids[ 'INSERT' ] );
+        sort( $ids[ 'UPDATE' ] );
+        sort( $ids[ 'DELETE' ] );
+        sort( $ids[ 'SELECT' ] );
+        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
+        return $ids;
+    }
+
     if ( !defined( 'DOING_AJAX' ) ) {
         
         add_action( 'admin_menu', function( ) {
@@ -586,8 +637,6 @@ EOD;
             $width      = !empty( $options[ 'ddt_x-table_width'      ][ $table ] ) ? $options[ 'ddt_x-table_width'      ][ $table ] : '';
             $cell_size  = !empty( $options[ 'ddt_x-table_cell_size'  ][ $table ] ) ? $options[ 'ddt_x-table_cell_size'  ][ $table ] : '';
             $sort_order = !empty( $options[ 'ddt_x-table_sort_order' ][ $table ] ) ? $options[ 'ddt_x-table_sort_order' ][ $table ] : '';
-            $results    = $wpdb->get_results( $wpdb->prepare( 'SELECT operation, row_ids FROM ' . ddt_get_diff_changes_table( ) . ' WHERE table_name = %s ORDER BY operation',
-                                              $table ) );
 ?>
 <div class="ddt_x-info_message">
 Table cells with content ending in &quot;...&quot; have been truncated. You can view the original content by clicking on the cell.
@@ -598,44 +647,7 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
     var ems_xii_diff_options = { width: "<?php echo $width; ?>", cell_size: "<?php echo $cell_size; ?>", sort_order: "<?php echo $sort_order; ?>" };
 </script>
 <?php
-            $ids             = [ ];
-            $ids[ 'INSERT' ] = [ ];
-            $ids[ 'UPDATE' ] = [ ];
-            $ids[ 'DELETE' ] = [ ];
-            $ids[ 'SELECT' ] = [ ];
-            foreach ( $results as $result ) {
-                $row_ids = $result->row_ids;
-                if ( is_serialized( $row_ids ) ) {
-                    $row_ids = unserialize( $row_ids );
-                } else {
-                    $row_ids = [ $row_ids ];
-                }
-                $idsr =& $ids[ $result->operation ];
-                $idsr = array_merge( $idsr, $row_ids );
-            }
-            $ids[ 'INSERT' ] = array_unique( $ids[ 'INSERT' ] );
-            $ids[ 'UPDATE' ] = array_unique( $ids[ 'UPDATE' ] );
-            $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
-            $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
-            $changed_ids     = array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) );
-            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$change_ids=' . print_r( $change_ids, true ) );
-            $original_ids    = $wpdb->get_col( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
-            $current_ids     = $wpdb->get_col( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
-            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$original_ids=' . print_r( $original_ids, true ) );
-            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$current_ids=' . print_r( $current_ids, true ) );
-            $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )                           : [ ];
-            $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? array_intersect( $current_ids, $original_ids )                      : [ ];
-            $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? array_diff( $original_ids, $current_ids )                           : [ ];
-            $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] )  : [ ];
-            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
-            foreach ( $ids as &$id ) {
-                $id = stringify_ids( $id );
-            }
-            sort( $ids[ 'INSERT' ] );
-            sort( $ids[ 'UPDATE' ] );
-            sort( $ids[ 'DELETE' ] );
-            sort( $ids[ 'SELECT' ] );
-            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
+            $ids = ddt_get_inserts_updates_deletes_selects( $table, $operation );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             foreach ( get_table_id( $table ) as $table_key ) {
                 $columns = array_filter( $columns, function( $v ) use ( $table_key ) {
