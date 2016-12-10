@@ -526,32 +526,17 @@ No database operations have been done on the selected tables.
                 }
                 $tables = [ ];
                 foreach ( $results as $result ) {
-                    $table_name = $result->table_name;
-                    $operation  = $result->operation;
-                    $row_ids    = $result->row_ids;
-                    if ( is_serialized( $row_ids ) ) {
-                        $row_ids = unserialize( $row_ids );
-                    } else {
-                        $row_ids = [ $row_ids ];
+                    if ( !in_array( $result->table_name, $tables ) ) {
+                        $tables[ ] = $result->table_name;
                     }
-                    if ( !array_key_exists( $table_name, $tables ) ) {
-                        $tables[ $table_name ] = [ ];
-                        $tables[ $table_name ][ 'INSERT' ] = [ ];
-                        $tables[ $table_name ][ 'UPDATE' ] = [ ];
-                        $tables[ $table_name ][ 'DELETE' ] = [ ];
-                        $tables[ $table_name ][ 'SELECT' ] = [ ];
-                    }
-                    $ids =& $tables[ $table_name ][ $operation ];
-                    $ids = array_merge( $ids, $row_ids );
                 }
                 echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th><th>Selects</th></tr></thead><tbody>'; 
-                foreach ( $tables as $table_name => $table ) {
+                foreach ( $tables as $table_name ) {
                     $ids = ddt_get_inserts_updates_deletes_selects( $table_name, [ 'INSERT', 'UPDATE', 'DELETE','SELECT' ] );
-                    error_log( DDT_DIFF_PAGE_NAME . '::$table=' . $table_name . ',$ids=' . print_r( $ids, true ) );
-                    $inserts     = count( $ids[ 'INSERT' ] );
-                    $updates     = count( $ids[ 'UPDATE' ] );
-                    $deletes     = count( $ids[ 'DELETE' ] );
-                    $selects     = count( $ids[ 'SELECT' ] );
+                    $inserts = count( $ids[ 'INSERT' ] );
+                    $updates = count( $ids[ 'UPDATE' ] );
+                    $deletes = count( $ids[ 'DELETE' ] );
+                    $selects = count( $ids[ 'SELECT' ] );
                     echo <<<EOD
 <tr><td>$table_name<input type="checkbox"></td><td>$inserts<input type="checkbox"></td><td>$updates<input type="checkbox"></td><td>$deletes<input type="checkbox"></td>
 <td>$selects<input type="checkbox"></td></tr>
