@@ -227,6 +227,7 @@ function ddt_wp_db_diff_init( ) {
                     return;
                 }
                 $operation = 'INSERT';
+                # N.B. REPLACE's are logged as INSERT's but the diff tool will determine it to be UPDATE's
                 if ( $wpdb->use_mysqli ) {
                     $results = mysqli_insert_id( $wpdb->dbh );
                 } else {
@@ -545,31 +546,12 @@ No database operations have been done on the selected tables.
                 }
                 echo '<table id="ddt_x-op_counts"><thead><tr><th>Table</th><th>Inserts</th><th>Updates</th><th>Deletes</th><th>Selects</th></tr></thead><tbody>'; 
                 foreach ( $tables as $table_name => $table ) {
-                    $table_id = get_table_id( $table_name, TRUE );
-                    $inserts  = array_unique( $table[ 'INSERT' ] );
-                    $deletes  = array_unique( $table[ 'DELETE' ] );
-                    $selects  = array_unique( $table[ 'SELECT' ] );
-                    $inserts  = stringify_ids( $inserts );
-                    $deletes  = stringify_ids( $deletes );
-                    $selects  = stringify_ids( $selects );
-                    if ( $inserts ) {
-                        # get the deleted inserts which are not yet included in $deletes
-                        $existing_inserts = $wpdb->get_col( "SELECT $table_id FROM $table_name WHERE $table_id IN ( " . implode( ', ', $inserts ) . ' )' );
-                        $existing_inserts = stringify_ids( $existing_inserts );
-                        if ( count( $existing_inserts ) < count( $inserts ) ) {
-                            $deletes = array_unique( array_merge( $deletes, array_diff( $inserts, $existing_inserts ) ) );
-                        }
-                    }
-                    $updates     = array_unique( $table[ 'UPDATE' ] );
-                    $updates     = stringify_ids( $updates );
-                    $inserts_all = $inserts;
-                    $inserts     = array_diff( $inserts, $deletes );
-                    $updates     = array_diff( $updates, $inserts, $deletes );
-                    $deletes     = array_diff( $deletes, $inserts_all );
-                    $inserts     = count( $inserts );
-                    $updates     = count( $updates );
-                    $deletes     = count( $deletes );
-                    $selects     = count( $selects );
+                    $ids = ddt_get_inserts_updates_deletes_selects( $table_name, [ 'INSERT', 'UPDATE', 'DELETE','SELECT' ] );
+                    error_log( DDT_DIFF_PAGE_NAME . '::$table=' . $table_name . ',$ids=' . print_r( $ids, true ) );
+                    $inserts     = count( $ids[ 'INSERT' ] );
+                    $updates     = count( $ids[ 'UPDATE' ] );
+                    $deletes     = count( $ids[ 'DELETE' ] );
+                    $selects     = count( $ids[ 'SELECT' ] );
                     echo <<<EOD
 <tr><td>$table_name<input type="checkbox"></td><td>$inserts<input type="checkbox"></td><td>$updates<input type="checkbox"></td><td>$deletes<input type="checkbox"></td>
 <td>$selects<input type="checkbox"></td></tr>
