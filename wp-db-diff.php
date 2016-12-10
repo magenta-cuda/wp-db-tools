@@ -220,7 +220,7 @@ function ddt_wp_db_diff_init( ) {
         $last_query = $wpdb->last_query;
         error_log( '$last_query=' . $last_query );
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
-            if ( preg_match( '#^\s*(insert|replace)\s*(low_priority\s*|delayed\s*|high_priority\s*)*(into\s*)?(\s|`)(\w+)\4.+#is', $last_query, $matches ) ) {
+            if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+|ignore\s+)*(into\s+)?(`?)(\w+)\4.+$#is', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
                 $table     = $matches[ 5 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
@@ -263,7 +263,7 @@ function ddt_wp_db_diff_init( ) {
                         error_log( 'ERROR:ddt_post_query():INSERT id not known: ' . $last_query );
                     }
                 }
-            } else if ( preg_match( '#^\s*update\s*(low_priority\s*)?(\s|`)(\w+)\2.+\swhere\s(.+)$#is', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*update\s+(low_priority\s+|ignore\s+)*(`?)(\w+)\2.+\s+where\s+(.+)$#is', $last_query, $matches ) ) {
                 # UPDATE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
@@ -279,7 +279,7 @@ function ddt_wp_db_diff_init( ) {
                     # this can occur when the update changes the value of a field in the where clause
                     #error_log( 'WARNING:ddt_post_query():UPDATE id not known: ' . $last_query );
                 }
-            } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+)*from\s*(\s|`)(\w+)\2\s*where\s(.*)$#is', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+|ignore\s+)*from\s+(`?)(\w+)\2\s+where\s+(.*)$#is', $last_query, $matches ) ) {
                 # DELETE operation
                 $table = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
