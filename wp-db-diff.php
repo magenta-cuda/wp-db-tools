@@ -618,23 +618,24 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
             $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
             $changed_ids     = array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) );
-            $original_ids    = $wpdb->get_results( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )', OBJECT_K );
-            $current_ids     = $wpdb->get_results( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )', OBJECT_K );
-            $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? sort( array_diff( $current_ids, $original_ids ) )                          : [ ];
-            $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? sort( array_intersect( $current_ids, $original_ids ) )                     : [ ];
-            $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? sort( array_diff( $original_ids, $current_ids ) )                          : [ ];
-            $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? sort( array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) ) : [ ];
+            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$change_ids=' . print_r( $change_ids, true ) );
+            $original_ids    = $wpdb->get_col( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+            $current_ids     = $wpdb->get_col( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$original_ids=' . print_r( $original_ids, true ) );
+            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$current_ids=' . print_r( $current_ids, true ) );
+            $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )                           : [ ];
+            $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? array_intersect( $current_ids, $original_ids )                      : [ ];
+            $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? array_diff( $original_ids, $current_ids )                           : [ ];
+            $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] )  : [ ];
+            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
             foreach ( $ids as &$id ) {
                 $id = stringify_ids( $id );
             }
-            # remove updates to inserted and deleted rows as the net effect for the session is an insert or delete
-            $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'INSERT' ] );
-            $ids[ 'UPDATE' ] = array_diff( $ids[ 'UPDATE' ], $ids[ 'DELETE' ] );
-            # remove deleted rows from inserted rows as the net effect for the session is the insert/delete did not occur
-            $ids[ 'INSERT' ] = array_diff( $ids[ 'INSERT' ], $ids[ 'DELETE' ] );
-            # remove inserted rows from deleted rows as the net effect for the session is the insert/delete did not occur
-            $ids[ 'DELETE' ] = array_diff( $ids[ 'DELETE' ], $ids[ 'INSERT' ] );
-            $ids[ 'SELECT' ] = array_diff( $ids[ 'SELECT' ], $ids[ 'INSERT' ] );
+            sort( $ids[ 'INSERT' ] );
+            sort( $ids[ 'UPDATE' ] );
+            sort( $ids[ 'DELETE' ] );
+            sort( $ids[ 'SELECT' ] );
+            error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
             $columns = $wpdb->get_col( 'SHOW COLUMNS FROM ' . $table );
             foreach ( get_table_id( $table ) as $table_key ) {
                 $columns = array_filter( $columns, function( $v ) use ( $table_key ) {
