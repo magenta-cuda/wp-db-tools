@@ -56,6 +56,14 @@ function ddt_wp_db_diff_end_session( ) {
     $wpdb->query( 'DROP TABLE ' . ddt_get_diff_changes_table( ) );
 }   # function ddt_wp_db_diff_end_session( ) {
 
+function ddt_doing_my_query( $new_value = NULL ) {
+    static $doing_my_query = FALSE;
+    if ( $new_value === NULL ) {
+        return $doing_my_query;
+    }
+    $doing_my_query = $new_value;
+}
+
 function ddt_wp_db_diff_prettify( $content ) {
     # first if a CONCAT value replace the ugly CONCAT value with user friendly version
     $content = str_replace( DDT_CONCAT_OP, ', ', $content );
@@ -208,21 +216,19 @@ function ddt_wp_db_diff_init( ) {
                 = '#(^|\s)(FROM|(UPDATE(\s+LOW_PRIORITY|\s+IGNORE){0,2})|((INSERT|REPLACE)(\s+LOW_PRIORITY|\s+DELAYED|\s+HIGH_PRIORITY|\s+IGNORE){0,4}(\s+INTO)?))\s+(`?)('
                   /*1     2     3      4                                 56               7                                                           8              9   */   
                     . implode( '|', $backed_up_tables ) . ')\9(\s|,)#is';
-            }
+        }
  
-        static $doing_my_query = FALSE;
-        if ( $doing_my_query ) {
+        if ( ddt_doing_my_query( ) ) {
             # prevent infinite recursion
             return;
         }
 
         $suffix     = $options[ 'ddt_x-orig_suffix' ];
         $last_query = $wpdb->last_query;
-        error_log( '$last_query=' . $last_query );
         if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
             if ( preg_match( '#^\s*(insert|replace)\s+(low_priority\s+|delayed\s+|high_priority\s+|ignore\s+)*(into\s+)?(`?)(\w+)\4.+$#is', $last_query, $matches ) ) {
                 # INSERT or REPLACE operation
-                $table     = $matches[ 5 ];
+                $table = $matches[ 5 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
@@ -266,32 +272,32 @@ function ddt_wp_db_diff_init( ) {
                 }
             } else if ( preg_match( '#^\s*update\s+(low_priority\s+|ignore\s+)*(`?)(\w+)\2.+\s+where\s+(.+)$#is', $last_query, $matches ) ) {
                 # UPDATE operation
-                $table = $matches[ 3 ];
+                $table     = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
-                $operation      = 'UPDATE';
-                $where          = $matches[ 4 ];
-                $id             = get_table_id( $table, TRUE );
-                $doing_my_query = TRUE;
-                $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
-                $doing_my_query = FALSE;
+                $operation = 'UPDATE';
+                $where     = $matches[ 4 ];
+                $id        = get_table_id( $table, TRUE );
+                ddt_doing_my_query( TRUE );
+                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                ddt_doing_my_query( FALSE );
                 if ( !$results ) {
                     # this can occur when the update changes the value of a field in the where clause
                     #error_log( 'WARNING:ddt_post_query():UPDATE id not known: ' . $last_query );
                 }
             } else if ( preg_match( '#^\s*delete\s+(low_priority\s+|quick\s+|ignore\s+)*from\s+(`?)(\w+)\2\s+where\s+(.*)$#is', $last_query, $matches ) ) {
                 # DELETE operation
-                $table = $matches[ 3 ];
+                $table     = $matches[ 3 ];
                 if ( !in_array( $table, $backed_up_tables ) ) {
                     return;
                 }
-                $operation      = 'DELETE';
-                $where          = $matches[ 4 ];
-                $id             = get_table_id( $table, TRUE );
-                $doing_my_query = TRUE;
-                $results = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
-                $doing_my_query = FALSE;
+                $operation = 'DELETE';
+                $where     = $matches[ 4 ];
+                $id        = get_table_id( $table, TRUE );
+                ddt_doing_my_query( TRUE );
+                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                ddt_doing_my_query( FALSE );
                 if ( !$results ) {
                     # this is a delete of a row that was inserted in this session
                     $results = -1;
@@ -302,14 +308,14 @@ function ddt_wp_db_diff_init( ) {
                 if ( !in_array( $table, $tables_to_log_read ) ) {
                     return;
                 }
-                $operation      = 'SELECT';
-                $where          = $matches[ 3 ];
+                $operation = 'SELECT';
+                $where     = $matches[ 3 ];
                 # fix fields with table name prefix
-                $where = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
-                $id             = get_table_id( $table, TRUE );
-                $doing_my_query = TRUE;
-                $results        = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
-                $doing_my_query = FALSE;
+                $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
+                $id        = get_table_id( $table, TRUE );
+                ddt_doing_my_query( TRUE );
+                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                ddt_doing_my_query( FALSE );
                 if ( !$results ) {
                     # this is a select of a row that was inserted in this session
                     $results = -1;
@@ -341,12 +347,15 @@ function ddt_wp_db_diff_init( ) {
                         $table_id[ $table ]          = get_table_id( $table,     TRUE, $table );
                     }
                 } );
+                if ( !array_intersect( $table_names, $tables_to_log_read ) ) {
+                    return;
+                }
                 $table_aliases_flip = array_flip( $table_aliases );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
                 preg_match_all( '#((\w+)\.)?(\w+|\*)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
                 # TODO: expressions
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
-                $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix, &$doing_my_query ) {
+                $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix ) {
                     global $wpdb;
                     $table = $match[ 2 ];
                     if ( $table ) {
@@ -359,9 +368,9 @@ function ddt_wp_db_diff_init( ) {
                         # column name without table qualifier should belong to exactly one table
                         error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
                         foreach ( $table_names as $table_name ) {
-                            $doing_my_query = TRUE;
-                            $columns        = $wpdb->get_col( "show columns from $table_name" );
-                            $doing_my_query = FALSE;
+                            ddt_doing_my_query( TRUE );
+                            $columns = $wpdb->get_col( "show columns from $table_name" );
+                            ddt_doing_my_query( FALSE );
                             if ( in_array( $match[ 3 ], $columns ) ) {
                                 if ( isset( $table_aliases_flip[ $table_name ] ) ) {
                                     return $table_id[ $table_aliases_flip[ $table_name ] ];
@@ -391,9 +400,9 @@ function ddt_wp_db_diff_init( ) {
                 error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
                 $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 15 ] ) . ' ';
                 error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
-                $doing_my_query = TRUE;
-                $results        = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_N );
-                $doing_my_query = FALSE;
+                ddt_doing_my_query( TRUE );
+                $results = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_N );
+                ddt_doing_my_query( FALSE );
                 error_log( 'TODO::SELECT with JOIN:$results=' . print_r( $results, true ) );
                 $ids = [ ];
                 foreach ( $results as $result ) {
@@ -426,9 +435,9 @@ function ddt_wp_db_diff_init( ) {
             if ( !empty( $table ) && !empty( $results ) && $results !== -1 ) {
                 # omit deletes of rows inserted in this session since the row id is not known
                 # and anyway the net result with respect to the session is that the insert did not occur
-                $doing_my_query = TRUE;
+                ddt_doing_my_query( TRUE );
                 $wpdb->insert( ddt_get_diff_changes_table( ), [ 'table_name' => $table, 'operation' => $operation, 'row_ids' => maybe_serialize( $results ) ], [ '%s', '%s' ] );
-                $doing_my_query = FALSE;
+                ddt_doing_my_query( FALSE );
             }
         }   # if ( $last_query && preg_match( $regex_of_tables_orig, $last_query ) === 1 ) {
     }   # function ddt_post_query( ) {
