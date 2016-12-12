@@ -136,6 +136,8 @@ function ddt_emit_backup_page( ) {
 ?>
 <h2>Database Backup Tool</h2>
 <?php
+    # verify that a previous backup/restore operation has completed normally
+    ddt_check_status( );
     # get names of all tables in database
     $tables     = $wpdb->get_col( "show tables" );
     # remove names of backup tables
@@ -286,6 +288,41 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
 </div>
 <?php
 }   # function ddt_emit_backup_page( ) {
+
+function ddt_check_status( ) {
+    if ( !($request = ddt_get_status( 'request' ) ) ) {
+        return;
+    }
+    error_log( 'ddt_check_status():$request=' . print_r( $request, true ) );
+    if ( $request[ 'action' ] === 'mc_backup_tables' ) {
+        $tables_to_do     = ddt_get_status( 'tables to do'     );
+        $backup_completed = ddt_get_status( 'backup completed' );
+        error_log( 'ddt_check_status():$backup_completed=' . print_r( $backup_completed, true ) );
+        if ( $backup_completed != $tables_to_do ) {
+            $backup_started        = ddt_get_status( 'backup started' );
+            $started_not_completed = array_diff( $backup_started, $backup_completed );
+            $request               = maybe_serialize( array_diff_key( $request, array_flip( $backup_completed ) ) );
+            $not_completed         = implode( ',',  array_diff( $tables_to_do,   $backup_completed ) );
+            if ( $started_not_completed ) {
+                # TODO: back out of this backup operation
+            }
+?>
+<div class="ddt_x-container">
+    <form id="ddt_x-tables">
+    <fieldset id="ddt_x-failure-backup" class="mc_db_tools_pane">
+        <legend>Backup Failure</legend>
+<p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up.</p>
+        <button id="ddt_x-restart-backup" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Backup</button>
+    </fieldset>
+    </form>
+</div>
+<?php
+        }   # if ( $backup_completed != $tables_to_do ) {
+    } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
+        # TODO:
+    }
+}   # function ddt_check_status( ) {
+
 
 if ( is_admin( ) ) {
     add_filter( 'plugin_row_meta', function( $links, $file ) {
