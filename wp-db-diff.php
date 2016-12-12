@@ -483,7 +483,9 @@ function ddt_wp_db_diff_init( ) {
         $changed_ids     = array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) );
         error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$change_ids=' . print_r( $change_ids, true ) );
         $original_ids    = $wpdb->get_col( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+        ddt_doing_my_query( TRUE );
         $current_ids     = $wpdb->get_col( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( " . implode( ', ', $changed_ids ) . ' )' );
+        ddt_doing_my_query( FALSE );
         error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$original_ids=' . print_r( $original_ids, true ) );
         error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$current_ids=' . print_r( $current_ids, true ) );
         $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )                           : [ ];
@@ -633,12 +635,16 @@ You can do a multi-column sort by pressing the shift-key when clicking on the se
             array_unshift( $columns, $table_id );
             $columns_imploded = implode( ', ', $columns );
             if (  $ids[ 'INSERT' ] ) {
+                ddt_doing_my_query( TRUE );
                 $inserts   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'INSERT' ] ) . ' )', OBJECT_K );
+                ddt_doing_my_query( FALSE );
             }
             if ( $ids[ 'UPDATE' ] ) {
+                ddt_doing_my_query( TRUE );
                 $updates   = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table           
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
+                ddt_doing_my_query( FALSE );
                 $originals = $wpdb->get_results( 'SELECT ' . $columns_imploded . ' FROM ' . $table . $suffix
                                                     . ' WHERE ' . $table_id . ' IN ( ' . implode( ', ', $ids[ 'UPDATE' ] ) . ' )', OBJECT_K );
             }
