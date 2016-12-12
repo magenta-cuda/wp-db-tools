@@ -290,10 +290,12 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
 }   # function ddt_emit_backup_page( ) {
 
 function ddt_check_status( ) {
+    global $wpdb;
     if ( !($request = ddt_get_status( 'request' ) ) ) {
         return;
     }
     error_log( 'ddt_check_status():$request=' . print_r( $request, true ) );
+    $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
     if ( $request[ 'action' ] === 'mc_backup_tables' ) {
         $tables_to_do     = ddt_get_status( 'tables to do'     );
         $backup_completed = ddt_get_status( 'backup completed' );
@@ -303,8 +305,14 @@ function ddt_check_status( ) {
             $started_not_completed = array_diff( $backup_started, $backup_completed );
             $request               = maybe_serialize( array_diff_key( $request, array_flip( $backup_completed ) ) );
             $not_completed         = implode( ',',  array_diff( $tables_to_do,   $backup_completed ) );
-            if ( $started_not_completed ) {
-                # TODO: back out of this backup operation
+            foreach ( $started_not_completed as $table ) {
+                # TODO: this is also being silently done on action admin_init - should force user to this page instead
+                if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
+                    if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
+                        $wpdb->query( "DROP TABLE $table" );
+                    }
+                    $wpdb->query( "ALTER TABLE {$table}{$suffix} RENAME TO $table" );
+                }
             }
 ?>
 <div class="ddt_x-container">
@@ -319,7 +327,19 @@ function ddt_check_status( ) {
 <?php
         }   # if ( $backup_completed != $tables_to_do ) {
     } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
-        # TODO:
+        $restore_started   = ddt_get_status( 'restore started' );
+        $restore_completed = ddt_get_status( 'restore completed' );
+        $started_not_completed = array_diff( $restore_started, $restore_completed );
+        foreach ( $started_not_completed as $table ) {
+            if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
+                if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
+                    $wpdb->query( "DROP TABLE $table" );
+                }
+                $wpdb->query( "CREATE TABLE $table LIKE {$table}{$suffix}" );
+                $wpdb->query( "INSERT INTO $table SELECT * FROM {$table}{$suffix}" );
+            }
+        }
+        # TODO not started and not completed
     }
 }   # function ddt_check_status( ) {
 
@@ -401,6 +421,7 @@ if ( defined( 'DOING_AJAX' ) ) {
                 $started   = ddt_get_status( "$op started"   );
                 $completed = ddt_get_status( "$op completed" );
                 if ( $started_not_completed = array_diff( $started, $completed ) ) {
+                    # TODO: shouldn't we force user back to backup page so we can properly display messages instead of doing this silently?
                     foreach ( $started_not_completed as $table ) {
                         if ( $op === 'backup' ) {
                             if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
