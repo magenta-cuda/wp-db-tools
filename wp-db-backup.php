@@ -329,35 +329,25 @@ function ddt_check_status( ) {
     } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
         $backed_up_tables  = ddt_backed_up_tables( );
         $restore_completed = ddt_get_status( 'restore completed' );
-        $unreported        = [ ];
         error_log( 'ddt_check_status():$restore_completed=' . print_r( $restore_completed, true ) );
-        foreach ( $restore_completed as $table ) {
-            # add restored but not recorded tables to $request
-            if ( empty( $request[ $table ] ) ) {
-                $request[ $table ] = DDT_RESTORED;
-                $unreported[ ]     = $table;
-            }
-        }
-        # handle any partially restored tables
-        $restore_started       = ddt_get_status( 'restore started' );
-        $started_not_completed = array_diff( $restore_started, $restore_completed );
-        foreach ( $started_not_completed as $table ) {
-            # complete the restore on started but not completed restores
-            if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
-                if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
-                    $wpdb->query( "DROP TABLE $table" );
+        if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
+            $unreported = [ ];
+            foreach ( $restore_completed as $table ) {
+                # add restored but not recorded tables to $request
+                if ( empty( $request[ $table ] ) ) {
+                    $request[ $table ] = DDT_RESTORED;
+                    $unreported[ ]     = $table;
                 }
-                $wpdb->query( "CREATE TABLE $table LIKE {$table}{$suffix}" );
-                $wpdb->query( "INSERT INTO $table SELECT * FROM {$table}{$suffix}" );
-                $request[ $table ] = DDT_RESTORED;
-                $unreported[ ]     = $table;
             }
-        }
-        $restored_tables = array_keys( array_filter( $request, function( $value ) {
-            return $value === DDT_RESTORED;
-        } ) );
-        error_log( 'ddt_check_status():$restored_tables=' . print_r( $restored_tables, true ) );
-        if ( $tables_to_restore = array_diff( $backed_up_tables, $restored_tables ) ) {
+            # handle any partially restored tables
+            foreach ( array_diff( ddt_get_status( 'restore started' ), $restore_completed ) as $table ) {
+                # back out a started but not complete the restore
+                if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
+                    if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
+                        $wpdb->query( "DROP TABLE $table" );
+                    }
+                }
+            }
 ?>
 <div class="ddt_x-container">
     <form id="ddt_x-tables">
@@ -369,7 +359,7 @@ function ddt_check_status( ) {
     </form>
 </div>
 <?php
-        }   # if ( $tables_to_restore = array_diff( $backed_up_tables, $restored_tables ) ) {
+        }   # if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
     }
 }   # function ddt_check_status( ) {
 
