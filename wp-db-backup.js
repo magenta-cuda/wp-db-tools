@@ -189,4 +189,11 @@ jQuery( document ).ready( function( ) {
         } );
         return false;
     } );
+    // failed backup/restore restart handlers
+    jQuery( "button#ddt_x-restart-backup" ).click( function( e ) {
+        backupTables( this.dataset.request );
+    } );
+    jQuery( "button#ddt_x-restart-restore" ).click( function( e ) {
+        restoreTables( this.dataset.request );
+    } );
 } );
