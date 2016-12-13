@@ -319,7 +319,7 @@ function ddt_check_status( ) {
     <form id="ddt_x-tables">
     <fieldset id="ddt_x-failure-backup" class="mc_db_tools_pane">
         <legend>Backup Failure</legend>
-<p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up.</p>
+<p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up. Please click the &quot;Restart Button&quot; button.</p>
         <button id="ddt_x-restart-backup" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Backup</button>
     </fieldset>
     </form>
@@ -327,19 +327,49 @@ function ddt_check_status( ) {
 <?php
         }   # if ( $backup_completed != $tables_to_do ) {
     } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
-        $restore_started   = ddt_get_status( 'restore started' );
+        $backed_up_tables  = ddt_backed_up_tables( );
         $restore_completed = ddt_get_status( 'restore completed' );
+        $unreported        = [ ];
+        error_log( 'ddt_check_status():$restore_completed=' . print_r( $restore_completed, true ) );
+        foreach ( $restore_completed as $table ) {
+            # add restored but not recorded tables to $request
+            if ( empty( $request[ $table ] ) ) {
+                $request[ $table ] = DDT_RESTORED;
+                $unreported[ ]     = $table;
+            }
+        }
+        # handle any partially restored tables
+        $restore_started       = ddt_get_status( 'restore started' );
         $started_not_completed = array_diff( $restore_started, $restore_completed );
         foreach ( $started_not_completed as $table ) {
+            # complete the restore on started but not completed restores
             if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
                 if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
                     $wpdb->query( "DROP TABLE $table" );
                 }
                 $wpdb->query( "CREATE TABLE $table LIKE {$table}{$suffix}" );
                 $wpdb->query( "INSERT INTO $table SELECT * FROM {$table}{$suffix}" );
+                $request[ $table ] = DDT_RESTORED;
+                $unreported[ ]     = $table;
             }
         }
-        # TODO not started and not completed
+        $restored_tables = array_keys( array_filter( $request, function( $value ) {
+            return $value === DDT_RESTORED;
+        } ) );
+        error_log( 'ddt_check_status():$restored_tables=' . print_r( $restored_tables, true ) );
+        if ( $tables_to_restore = array_diff( $backed_up_tables, $restored_tables ) ) {
+?>
+<div class="ddt_x-container">
+    <form id="ddt_x-tables">
+    <fieldset id="ddt_x-failure-restore" class="mc_db_tools_pane">
+        <legend>Restore Failure</legend>
+<p>The previous restore operation has not completed. Tables <?php echo $tables_to_restore; ?> have not been restored. Please click the &quot;Restart Restore&quot; button.</p>
+        <button id="ddt_x-restart-restore" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Restore</button>
+    </fieldset>
+    </form>
+</div>
+<?php
+        }   # if ( $tables_to_restore = array_diff( $backed_up_tables, $restored_tables ) ) {
     }
 }   # function ddt_check_status( ) {
 
