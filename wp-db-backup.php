@@ -325,7 +325,7 @@ function ddt_check_status( $check_only = FALSE ) {
     <form id="ddt_x-tables">
     <fieldset id="ddt_x-failure-backup" class="mc_db_tools_pane">
         <legend>Backup Failure</legend>
-<p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up. Please click the &quot;Restart Button&quot; button.</p>
+<p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up. Please click the &quot;Restart Backup&quot; button.</p>
         <button id="ddt_x-restart-backup" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Backup</button>
     </fieldset>
     </form>
@@ -375,6 +375,23 @@ function ddt_check_status( $check_only = FALSE ) {
 
 
 if ( is_admin( ) ) {
+
+    # verify that last operation of the Backup Tool is fully done.
+
+    add_action( 'admin_notices', function( ) {
+        if ( ddt_check_status( TRUE ) ) {
+            return;
+        }
+?>
+<div class="notice notice-error">
+    <p>The last operation of the Database Backup Tool is incomplete. Please go to <a href="<?php echo( admin_url( 'admin.php?page=ddt_backup_tool' ) ); ?>">Database Backup Tool</a>
+        to fix this.</p>
+</div>
+<?php
+    } );
+
+    # add link to documentation
+
     add_filter( 'plugin_row_meta', function( $links, $file ) {
         if ( $file === ddt_plugin_basename( ) ) {
             return array_merge( $links, [ 'docs' => '<a href="https://wpdbdt.wordpress.com/" target="_blank">View documentation</a>' ] );
@@ -441,36 +458,6 @@ function ddt_set_status( $name, $status ) {
 
 if ( defined( 'DOING_AJAX' ) ) {
 
-    add_action( 'admin_init', function( ) {
-        global $wpdb;
-        if ( $wpdb->get_col( 'SHOW TABLES LIKE "' . DDT_STATUS_TABLE . '"' ) ) {
-            $to_do  = ddt_get_status( 'tables to do' );
-            $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
-            # check for partially done tables
-            foreach ( [ 'backup', 'restore' ] as $op ) {
-                $started   = ddt_get_status( "$op started"   );
-                $completed = ddt_get_status( "$op completed" );
-                if ( $started_not_completed = array_diff( $started, $completed ) ) {
-                    # TODO: shouldn't we force user back to backup page so we can properly display messages instead of doing this silently?
-                    foreach ( $started_not_completed as $table ) {
-                        if ( $op === 'backup' ) {
-                            if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
-                                if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
-                                    $wpdb->query( "DROP TABLE $table" );
-                                }
-                                $wpdb->query( "ALTER TABLE {$table}{$suffix} RENAME TO $table" );
-                            }
-                        } else if ( $op === 'restore' ) {
-                        }
-                    }
-                }
-                if ( $yet_to_do = array_diff( $to_do, $completed ) ) {
-                    # TODO: force client to restart
-                }
-            }
-        }
-    } );
-    
     # AJAX Helper Functions
 
     # ddt_wpdb_query() is a wrapper for $wpdb->query() for logging SQL commands and results
