@@ -289,10 +289,13 @@ To monitor the backed up tables for changes you must enable the Diff Tool.
 <?php
 }   # function ddt_emit_backup_page( ) {
 
-function ddt_check_status( ) {
+# ddt_check_status() will show the recovery pane if a backup/restore operation has failed.
+# if $check_only is TRUE ddt_check_status() returns FALSE if a backup/restore operation has failed.
+
+function ddt_check_status( $check_only = FALSE ) {
     global $wpdb;
     if ( !($request = ddt_get_status( 'request' ) ) ) {
-        return;
+        return TRUE;
     }
     error_log( 'ddt_check_status():$request=' . print_r( $request, true ) );
     $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
@@ -301,6 +304,9 @@ function ddt_check_status( ) {
         $backup_completed = ddt_get_status( 'backup completed' );
         error_log( 'ddt_check_status():$backup_completed=' . print_r( $backup_completed, true ) );
         if ( $backup_completed != $tables_to_do ) {
+            if ( $check_only ) {
+                return FALSE;
+            }
             $backup_started        = ddt_get_status( 'backup started' );
             $started_not_completed = array_diff( $backup_started, $backup_completed );
             $request               = maybe_serialize( array_diff_key( $request, array_flip( $backup_completed ) ) );
@@ -331,6 +337,9 @@ function ddt_check_status( ) {
         $restore_completed = ddt_get_status( 'restore completed' );
         error_log( 'ddt_check_status():$restore_completed=' . print_r( $restore_completed, true ) );
         if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
+            if ( $check_only ) {
+                return FALSE;
+            }
             $unreported = [ ];
             foreach ( $restore_completed as $table ) {
                 # add restored but not recorded tables to $request
@@ -361,6 +370,7 @@ function ddt_check_status( ) {
 <?php
         }   # if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
     }
+    return TRUE;
 }   # function ddt_check_status( ) {
 
 
