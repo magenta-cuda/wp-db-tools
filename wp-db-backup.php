@@ -134,7 +134,8 @@ function ddt_emit_backup_page( ) {
     global $wpdb;
     $options = ddt_get_options( );
 ?>
-<h2>Database Backup Tool</h2>
+<h2>Database Backup Tool <span id="ddt_x-status-active" class="ddt_x-status-heading" style="display:<?php echo ddt_in_backup_session( ) ? 'inline' : 'none'; ?>";">
+    (Status: a session is active)</span></h2>
 <?php
     # verify that a previous backup/restore operation has completed normally
     ddt_check_status( );
@@ -312,7 +313,6 @@ function ddt_check_status( $check_only = FALSE ) {
             $request               = maybe_serialize( array_diff_key( $request, array_flip( $backup_completed ) ) );
             $not_completed         = implode( ',',  array_diff( $tables_to_do,   $backup_completed ) );
             foreach ( $started_not_completed as $table ) {
-                # TODO: this is also being silently done on action admin_init - should force user to this page instead
                 if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
                     if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
                         $wpdb->query( "DROP TABLE $table" );
@@ -420,6 +420,11 @@ function ddt_get_status_table( ) {
     return DDT_STATUS_TABLE;
 }
 
+function ddt_in_backup_session( ) {
+    global $wpdb;
+    return !!$wpdb->get_col( 'SHOW TABLES LIKE "%' . ddt_get_options( )[ 'ddt_x-orig_suffix' ] . '"' );
+}
+    
 function ddt_in_diff_session( ) {
     global $wpdb;
     return !!$wpdb->get_col( 'SHOW TABLES LIKE "' . ddt_get_diff_changes_table( ) . '"' );

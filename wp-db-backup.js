@@ -65,6 +65,7 @@ jQuery( document ).ready( function( ) {
                 options.find( "button#ddt_x-suffix_verify"       ).prop( "disabled", true  );
                 options.find( "input#ddt_x-tables_per_increment" ).prop( "disabled", true  );
                 options.find( "input#ddt_x-enable_diff"          ).prop( "disabled", true  );
+                jQuery( "span#ddt_x-status-active"               ).show( );
             } else {
                 backupTables( response.data.tables_to_do );
             }
@@ -134,6 +135,7 @@ jQuery( document ).ready( function( ) {
                 options.find( "button#ddt_x-suffix_verify"       ).prop( "disabled", false );
                 options.find( "input#ddt_x-tables_per_increment" ).prop( "disabled", false );
                 options.find( "input#ddt_x-enable_diff"          ).prop( "disabled", false );
+                jQuery( "span#ddt_x-status-active"               ).hide( );
             } else {
                 buttons.find( "button#ddt_x-delete"              ).prop( "disabled", false );
             }
