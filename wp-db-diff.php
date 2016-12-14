@@ -302,24 +302,6 @@ function ddt_wp_db_diff_init( ) {
                     # this is a delete of a row that was inserted in this session
                     $results = -1;
                 }
-            } else if ( preg_match( '#^\s*select\s+.+\s+from\s+(`?)(\w+)\1\s+where\s+(.*)$#is', $last_query, $matches ) ) {
-                # SELECT operation without JOIN
-                $table = $matches[ 2 ];
-                if ( !in_array( $table, $tables_to_log_read ) ) {
-                    return;
-                }
-                $operation = 'SELECT';
-                $where     = $matches[ 3 ];
-                # fix fields with table name prefix
-                $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
-                $id        = get_table_id( $table, TRUE );
-                ddt_doing_my_query( TRUE );
-                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
-                ddt_doing_my_query( FALSE );
-                if ( !$results ) {
-                    # this is a select of a row that was inserted in this session
-                    $results = -1;
-                }
             } else if ( preg_match(
                 '#^\s*select\s+(.+)\s+from\s+(((`?)(\w+)\4(\s+(as\s+)?\w+)?\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*)+(`?)(\w+)\11(\s+(as\s+)?\w+)?)\s+((on|where)\s+.*)$#is',
                 #              1  1          234  45   5  6   7     7    6    8    9A                                            A   9       8   3 B  BC   C   D   E     E    D 2   FG        G     F 
@@ -386,8 +368,6 @@ function ddt_wp_db_diff_init( ) {
                 $backup_table_names = array_map( function( $name ) use ( $suffix ) {
                     return "{$name}{$suffix}";
                 }, $table_names );
-                error_log( 'TODO::SELECT with JOIN:$table_names=' . print_r( $table_names, true ) );
-                error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
                 $from_clause = ' FROM ' . str_replace( $table_names, $backup_table_names, $matches[ 2 ] ) . ' ';
                 error_log( 'TODO::SELECT with JOIN:$from_clause=' . $from_clause );
                 $table_names = array_map( function( $name ) use ( $suffix ) {
@@ -396,8 +376,6 @@ function ddt_wp_db_diff_init( ) {
                 $backup_table_names = array_map( function( $name ) use ( $suffix ) {
                     return "{$name}.";
                 }, $backup_table_names );
-                error_log( 'TODO::SELECT with JOIN:$table_names=' . print_r( $table_names, true ) );
-                error_log( 'TODO::SELECT with JOIN:$backup_table_names=' . print_r( $backup_table_names, true ) );
                 $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 15 ] ) . ' ';
                 error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
                 ddt_doing_my_query( TRUE );
@@ -427,6 +405,24 @@ function ddt_wp_db_diff_init( ) {
                     ddt_doing_my_query( FALSE );
                 }
                 $results = NULL;
+            } else if ( preg_match( '#^\s*select\s+.+\s+from\s+(`?)(\w+)\1\s+((where\s+)?)(.*)$#is', $last_query, $matches ) ) {
+                # SELECT operation without JOIN
+                $table = $matches[ 2 ];
+                if ( !in_array( $table, $tables_to_log_read ) ) {
+                    return;
+                }
+                $operation = 'SELECT';
+                $where     = ( $matches[ 3 ] ? '' : ' 1=1 ' ) . $matches[ 5 ];
+                # fix fields with table name prefix
+                $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
+                $id        = get_table_id( $table, TRUE );
+                ddt_doing_my_query( TRUE );
+                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                ddt_doing_my_query( FALSE );
+                if ( !$results ) {
+                    # this is a select of a row that was inserted in this session
+                    $results = -1;
+                }
             } else if ( preg_match( '/^\s*show\s/i', $last_query ) ) {
                 # SHOW operation is ignored
             } else if ( preg_match( '/^\s*create\s/i', $last_query ) ) {
