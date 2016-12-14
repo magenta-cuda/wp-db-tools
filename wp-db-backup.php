@@ -303,7 +303,6 @@ function ddt_check_status( $check_only = FALSE ) {
     if ( $request[ 'action' ] === 'mc_backup_tables' ) {
         $tables_to_do     = ddt_get_status( 'tables to do'     );
         $backup_completed = ddt_get_status( 'backup completed' );
-        error_log( 'ddt_check_status():$backup_completed=' . print_r( $backup_completed, true ) );
         if ( $backup_completed != $tables_to_do ) {
             if ( $check_only ) {
                 return FALSE;

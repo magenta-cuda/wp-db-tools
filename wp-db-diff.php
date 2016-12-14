@@ -313,7 +313,6 @@ function ddt_wp_db_diff_init( ) {
                 $tables = $matches[ 2 ];
                 $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
                 $tables = explode( ',', $tables );
-                error_log( 'TODO::SELECT with JOIN:$tables=' . print_r( $tables, true ) );
                 $table_names   = [ ];
                 $table_id      = [ ];
                 $table_aliases = [ ];
@@ -335,8 +334,6 @@ function ddt_wp_db_diff_init( ) {
                 $table_aliases_flip = array_flip( $table_aliases );
                 error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
                 preg_match_all( '#((\w+)\.)?(\w+|\*)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
-                # TODO: expressions
-                error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
                 $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix ) {
                     global $wpdb;
                     $table = $match[ 2 ];
@@ -489,8 +486,6 @@ function ddt_wp_db_diff_init( ) {
         $current_ids     = $changed_ids ? stringify_ids( $wpdb->get_col( "SELECT {$table_id} FROM {$table} WHERE {$table_id} IN ( "
                                                                              . implode( ', ', $changed_ids ) . ' )' ) ) : [ ];
         ddt_doing_my_query( FALSE );
-        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$original_ids=' . print_r( $original_ids, true ) );
-        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$current_ids=' . print_r( $current_ids, true ) );
         $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )      : [ ];
         $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? array_intersect( $current_ids, $original_ids ) : [ ];
         $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? array_diff( $original_ids, $current_ids )      : [ ];
