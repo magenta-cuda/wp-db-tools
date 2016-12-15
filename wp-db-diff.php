@@ -331,7 +331,6 @@ function ddt_wp_db_diff_init( ) {
                     return;
                 }
                 $table_aliases_flip = array_flip( $table_aliases );
-                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );
                 # remove COUNT fields
                 if ( !( $columns_clause = trim( preg_replace( '#count\(\s*((\w+\.)?(\w+|\*))\s*\),?#i', '', $matches[ 1 ] ) ) ) ) {
                     # SELECT only has a COUNT field so nothing is really accessed
@@ -381,7 +380,6 @@ function ddt_wp_db_diff_init( ) {
                     return "{$name}{$suffix}";
                 }, $table_names );
                 $from_clause = ' FROM ' . str_replace( $table_names, $backup_table_names, $matches[ 2 ] ) . ' ';
-                error_log( 'TODO::SELECT with JOIN:$from_clause=' . $from_clause );
                 $table_names = array_map( function( $name ) use ( $suffix ) {
                     return "{$name}.";
                 }, $table_names );
@@ -393,7 +391,6 @@ function ddt_wp_db_diff_init( ) {
                 ddt_doing_my_query( TRUE );
                 $results = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_N );
                 ddt_doing_my_query( FALSE );
-                error_log( 'TODO::SELECT with JOIN:$results=' . print_r( $results, true ) );
                 $ids = [ ];
                 foreach ( $results as $result ) {
                     reset( $result );
@@ -410,7 +407,7 @@ function ddt_wp_db_diff_init( ) {
                     }
                 }
                 error_log( 'TODO::SELECT with JOIN:$ids=' . print_r( $ids, true ) );
-                # TODO: results are not compatible with the logging code below so log it here
+                # results are not compatible with the logging code below so log it here
                 foreach ( $ids as $table_name => $row_ids ) {
                     ddt_doing_my_query( TRUE );
                     $wpdb->insert( ddt_get_diff_changes_table( ), [ 'table_name' => $table_name, 'operation' => 'SELECT', 'row_ids' => maybe_serialize( $row_ids ) ], [ '%s', '%s' ] );
@@ -433,6 +430,10 @@ function ddt_wp_db_diff_init( ) {
                 $as        = $matches[ 3 ];
                 $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
                 $id        = get_table_id( $table, TRUE );
+                # handle SELECT with HAVING clause by ignoring HAVING clause; this may return more than was originally selected but better more than missing
+                $where = preg_replace_callback( '#\s+having\s+.+?(order\sby|limit\s|procedure\s|into\s|for\supdate\s|lock\sin\s|$)#is', function( $matches ) {
+                    return " $matches[1]";
+                }, $where );
                 ddt_doing_my_query( TRUE );
                 $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} $as WHERE $where" );
                 ddt_doing_my_query( FALSE );
@@ -514,7 +515,6 @@ function ddt_wp_db_diff_init( ) {
         sort( $ids[ 'UPDATE' ] );
         sort( $ids[ 'DELETE' ] );
         sort( $ids[ 'SELECT' ] );
-        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$ids=' . print_r( $ids, true ) );
         return $ids;
     }
 
