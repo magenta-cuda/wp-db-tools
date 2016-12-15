@@ -332,8 +332,13 @@ function ddt_wp_db_diff_init( ) {
                     return;
                 }
                 $table_aliases_flip = array_flip( $table_aliases );
-                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );              
-                preg_match_all( '#((\w+)\.)?(\w+|\*)\s*(,|$)\s*#is', $matches[ 1 ], $fields, PREG_SET_ORDER );
+                error_log( 'TODO::SELECT with JOIN:$table_id=' . print_r( $table_id, true ) );
+                # remove COUNT fields
+                if ( !( $columns_clause = trim( preg_replace( '#count\(\s*((\w+\.)?(\w+|\*))\s*\),?#i', '', $matches[ 1 ] ) ) ) ) {
+                    # SELECT only has a COUNT field so nothing is really accessed
+                    return;
+                }
+                preg_match_all( '#((\w+)\.)?(\w+|\*)\s*(,|$)\s*#is', $columns_clause, $fields, PREG_SET_ORDER );
                 $fields = array_unique( array_filter( array_map( function( $match ) use ( $table_names, $table_id, $table_aliases, $table_aliases_flip, $suffix ) {
                     global $wpdb;
                     $table = $match[ 2 ];
@@ -345,6 +350,10 @@ function ddt_wp_db_diff_init( ) {
                         }
                     } else {
                         # column name without table qualifier should belong to exactly one table
+                        if ( $match[ 3 ] === '*' ) {
+                            # all columns of all tables are selected
+                            return '*';
+                        }
                         error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
                         foreach ( $table_names as $table_name ) {
                             ddt_doing_my_query( TRUE );
@@ -362,6 +371,13 @@ function ddt_wp_db_diff_init( ) {
                     }
                 }, $fields ) ) );
                 error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
+                if ( in_array( '*', $fields ) ) {
+                    # all columns of all tables are selected so select all primary keys of all tables
+                    $fields = [ ];
+                    foreach ( $table_names as $table_name ) {
+                        $fields[ ] = str_replace( '.', "{$suffix}.", $table_id[ $table_name ] );
+                    }
+                }
                 $backup_table_names = array_map( function( $name ) use ( $suffix ) {
                     return "{$name}{$suffix}";
                 }, $table_names );
@@ -402,19 +418,24 @@ function ddt_wp_db_diff_init( ) {
                     ddt_doing_my_query( FALSE );
                 }
                 $results = NULL;
-            } else if ( preg_match( '#^\s*select\s+.+\s+from\s+(`?)(\w+)\1\s+((where\s+)?)(.*)$#is', $last_query, $matches ) ) {
+            } else if ( preg_match( '#^\s*select\s+.+\s+from\s+(`?)(\w+)\1\s+(as (\w+)\s+)?((where\s+)?)(.*)$#is', $last_query, $matches ) ) {
                 # SELECT operation without JOIN
                 $table = $matches[ 2 ];
                 if ( !in_array( $table, $tables_to_log_read ) ) {
                     return;
                 }
                 $operation = 'SELECT';
-                $where     = ( $matches[ 3 ] ? '' : ' 1=1 ' ) . $matches[ 5 ];
+                $where     = ( $matches[ 5 ] ? '' : ' 1=1 ' ) . $matches[ 7 ];
+                if ( !$matches[ 5 ] ) {
+                    error_log( 'SELECT:$last_query=' . $last_query );
+                    error_log( 'SELECT:$matches=' . print_r( $matches, true ) );
+                }    
                 # fix fields with table name prefix
+                $as        = $matches[ 3 ];
                 $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
                 $id        = get_table_id( $table, TRUE );
                 ddt_doing_my_query( TRUE );
-                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} WHERE $where" );
+                $results   = $wpdb->get_col( "SELECT $id FROM {$table}{$suffix} $as WHERE $where" );
                 ddt_doing_my_query( FALSE );
                 if ( !$results ) {
                     # this is a select of a row that was inserted in this session
