@@ -161,7 +161,7 @@ function ddt_emit_backup_page( ) {
         <?php echo $backup_tables ? ' disabled' : ''; echo $backup_suffix_ok ? '' : ' style="display:none;"'; ?>>
         <legend>WordPress Tables for Backup</legend>
         <p>The left checkbox selects a table for backup. The right checkbox additionally enables a table for logging SELECT operations by the diff tool.
-        As WordPress does a massive number of SELECT operations enable tables for logging SELECT operations sparingly.</p>
+        As WordPress does a massive number of SELECT operations enable tables for logging SELECT operations sparingly and use only in short sessions.</p>
         <table class="ddt_x-table_table">
 <?php
     # create a HTML input element embedded in a HTML td element for each database table
@@ -298,7 +298,6 @@ function ddt_check_status( $check_only = FALSE ) {
     if ( !($request = ddt_get_status( 'request' ) ) ) {
         return TRUE;
     }
-    error_log( 'ddt_check_status():$request=' . print_r( $request, true ) );
     $suffix = ddt_get_options( )[ 'ddt_x-orig_suffix' ];
     if ( $request[ 'action' ] === 'mc_backup_tables' ) {
         $tables_to_do     = ddt_get_status( 'tables to do'     );

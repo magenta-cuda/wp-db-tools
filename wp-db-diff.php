@@ -309,7 +309,6 @@ function ddt_wp_db_diff_init( ) {
             ) ) {
                 # SELECT operation with JOIN
                 error_log( 'TODO::SELECT with JOIN:$last_query=' . $last_query );
-                error_log( 'TODO::SELECT with JOIN:$matches=' . print_r( $matches, true ) );
                 $tables = $matches[ 2 ];
                 $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
                 $tables = explode( ',', $tables );
@@ -354,8 +353,8 @@ function ddt_wp_db_diff_init( ) {
                             # all columns of all tables are selected
                             return '*';
                         }
-                        error_log( 'TODO::SELECT with JOIN:NO TABLE QUALIFIER:' . $last_query );
                         foreach ( $table_names as $table_name ) {
+                            # find corresponding primary key for a selected column
                             ddt_doing_my_query( TRUE );
                             $columns = $wpdb->get_col( "show columns from $table_name" );
                             ddt_doing_my_query( FALSE );
