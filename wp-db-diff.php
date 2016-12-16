@@ -308,13 +308,13 @@ function ddt_wp_db_diff_init( ) {
                 $last_query, $matches
             ) ) {
                 # SELECT operation with JOIN
-                error_log( 'TODO::SELECT with JOIN:$last_query=' . $last_query );
                 $tables = $matches[ 2 ];
                 $tables = preg_replace( ['#\s*(,|\s((CROSS|INNER|OUTER|LEFT\s+OUTER|RIGHT\s+OUTER)\s+)?JOIN\s)\s*#is', '#\s+AS\s+#is' ], [ ',', ' ' ], $tables );
                 $tables = explode( ',', $tables );
                 $table_names   = [ ];
                 $table_id      = [ ];
                 $table_aliases = [ ];
+                # map table names and aliases to primary keys
                 array_walk( $tables, function( $table ) use ( &$table_names, &$table_id, &$table_aliases, $suffix ) {
                     if ( strpos( $table, ' ' ) ) {
                         $pair = explode( ' ', $table );
@@ -368,7 +368,6 @@ function ddt_wp_db_diff_init( ) {
                         return null;
                     }
                 }, $fields ) ) );
-                error_log( 'TODO::SELECT with JOIN:$fields=' . print_r( $fields, true ) );
                 if ( in_array( '*', $fields ) ) {
                     # all columns of all tables are selected so select all primary keys of all tables
                     $fields = [ ];
@@ -387,7 +386,6 @@ function ddt_wp_db_diff_init( ) {
                     return "{$name}.";
                 }, $backup_table_names );
                 $where_clause = ' ' . str_replace( $table_names, $backup_table_names, $matches[ 15 ] ) . ' ';
-                error_log( 'TODO::SELECT with JOIN:$where_clause=' . $where_clause );
                 ddt_doing_my_query( TRUE );
                 $results = $wpdb->get_results( 'SELECT ' . implode( ', ', $fields ) . $from_clause . $where_clause, ARRAY_N );
                 ddt_doing_my_query( FALSE );
@@ -406,7 +404,6 @@ function ddt_wp_db_diff_init( ) {
                         next( $result );
                     }
                 }
-                error_log( 'TODO::SELECT with JOIN:$ids=' . print_r( $ids, true ) );
                 # results are not compatible with the logging code below so log it here
                 foreach ( $ids as $table_name => $row_ids ) {
                     ddt_doing_my_query( TRUE );
