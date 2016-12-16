@@ -339,6 +339,7 @@ function ddt_check_status( $check_only = FALSE ) {
             if ( $check_only ) {
                 return FALSE;
             }
+            $restore_started = ddt_get_status( 'restore started' );
             $unreported = [ ];
             foreach ( $restore_completed as $table ) {
                 # add restored but not recorded tables to $request
@@ -348,14 +349,16 @@ function ddt_check_status( $check_only = FALSE ) {
                 }
             }
             # handle any partially restored tables
-            foreach ( array_diff( ddt_get_status( 'restore started' ), $restore_completed ) as $table ) {
+            foreach ( array_diff( $restore_started, $restore_completed ) as $table ) {
                 # back out a started but not complete the restore
                 if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
                     if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
                         $wpdb->query( "DROP TABLE $table" );
                     }
                 }
+                $restore_started = array_diff( $restore_started, [ $table ] );
             }
+            ddt_set_status( 'restore started', $restore_started );
 ?>
 <div class="ddt_x-container">
     <form id="ddt_x-tables">
