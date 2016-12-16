@@ -308,8 +308,8 @@ function ddt_check_status( $check_only = FALSE ) {
             }
             $backup_started        = ddt_get_status( 'backup started' );
             $started_not_completed = array_diff( $backup_started, $backup_completed );
-            $request               = maybe_serialize( array_diff_key( $request, array_flip( $backup_completed ) ) );
-            $not_completed         = implode( ',',  array_diff( $tables_to_do,   $backup_completed ) );
+            $request               = array_diff_key( $request, array_flip( $backup_completed ) );
+            $not_completed         = implode( ',',  array_diff( $tables_to_do, $backup_completed ) );
             foreach ( $started_not_completed as $table ) {
                 if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
                     if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
@@ -317,14 +317,16 @@ function ddt_check_status( $check_only = FALSE ) {
                     }
                     $wpdb->query( "ALTER TABLE {$table}{$suffix} RENAME TO $table" );
                 }
+                $backup_started = array_diff( $backup_started, [ $table ] );
             }
+            ddt_set_status( 'backup started', $backup_started );
 ?>
 <div class="ddt_x-container">
     <form id="ddt_x-tables">
     <fieldset id="ddt_x-failure-backup" class="mc_db_tools_pane">
         <legend>Backup Failure</legend>
 <p>The previous backup operation has not completed. Tables <?php echo $not_completed; ?> have not been backed up. Please click the &quot;Restart Backup&quot; button.</p>
-        <button id="ddt_x-restart-backup" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Backup</button>
+        <button id="ddt_x-restart-backup" class="ddt_x-button" type="button" data-request="<?php echo http_build_query( $request ); ?>">Restart Backup</button>
     </fieldset>
     </form>
 </div>
@@ -360,7 +362,7 @@ function ddt_check_status( $check_only = FALSE ) {
     <fieldset id="ddt_x-failure-restore" class="mc_db_tools_pane">
         <legend>Restore Failure</legend>
 <p>The previous restore operation has not completed. Tables <?php echo $tables_to_restore; ?> have not been restored. Please click the &quot;Restart Restore&quot; button.</p>
-        <button id="ddt_x-restart-restore" class="ddt_x-button" type="button" data-request="<?php echo $request; ?>">Restart Restore</button>
+        <button id="ddt_x-restart-restore" class="ddt_x-button" type="button" data-request="<?php echo http_build_query( $request ); ?>">Restart Restore</button>
     </fieldset>
     </form>
 </div>
