@@ -497,7 +497,6 @@ function ddt_wp_db_diff_init( ) {
         $ids[ 'DELETE' ] = array_unique( $ids[ 'DELETE' ] );
         $ids[ 'SELECT' ] = array_unique( $ids[ 'SELECT' ] );
         $changed_ids     = stringify_ids( array_unique( array_merge( $ids[ 'INSERT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) ) );
-        error_log( 'ACTION::wp_ajax_ddt_x-diff_view_changes:$change_ids=' . print_r( $change_ids, true ) );
         $original_ids    = $changed_ids ? stringify_ids( $wpdb->get_col( "SELECT {$table_id} FROM {$table}{$suffix} WHERE {$table_id} IN ( "
                                                                              . implode( ', ', $changed_ids ) . ' )' ) ) : [ ];
         ddt_doing_my_query( TRUE );

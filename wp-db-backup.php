@@ -54,7 +54,7 @@ function ddt_get_options( $o = NULL ) {
         $options = $o;
     } else if ( $options === NULL ) {
         $options = \get_option( 'ddt_x-wp_db_tools', [
-            'ddt_x-version'              => '2.0',
+            'ddt_x-version'              => '2.2',
             'ddt_x-orig_suffix'          => '_ddt_x_1113',
             'ddt_x-tables_per_increment' => '4',
             'ddt_x-suffix_verified'      => FALSE,
@@ -333,7 +333,6 @@ function ddt_check_status( $check_only = FALSE ) {
     } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
         $backed_up_tables  = ddt_backed_up_tables( );
         $restore_completed = ddt_get_status( 'restore completed' );
-        error_log( 'ddt_check_status():$restore_completed=' . print_r( $restore_completed, true ) );
         if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
             if ( $check_only ) {
                 return FALSE;
