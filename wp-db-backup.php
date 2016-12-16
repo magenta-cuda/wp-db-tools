@@ -309,7 +309,7 @@ function ddt_check_status( $check_only = FALSE ) {
             $backup_started        = ddt_get_status( 'backup started' );
             $started_not_completed = array_diff( $backup_started, $backup_completed );
             $request               = array_diff_key( $request, array_flip( $backup_completed ) );
-            $not_completed         = implode( ',',  array_diff( $tables_to_do, $backup_completed ) );
+            $not_completed         = implode( ', ', array_diff( $tables_to_do, $backup_completed ) );
             foreach ( $started_not_completed as $table ) {
                 if ( $wpdb->get_col( "SHOW TABLES LIKE '{$table}{$suffix}'" ) ) {
                     if ( $wpdb->get_col( "SHOW TABLES LIKE '$table'" ) ) {
@@ -335,7 +335,7 @@ function ddt_check_status( $check_only = FALSE ) {
     } else if ( $request[ 'action' ] === 'mc_restore_tables' ) {
         $backed_up_tables  = ddt_backed_up_tables( );
         $restore_completed = ddt_get_status( 'restore completed' );
-        if ( $tables_to_restore = array_diff( $backed_up_tables, $restore_completed ) ) {
+        if ( $tables_to_restore = implode( ', ', array_diff( $backed_up_tables, $restore_completed ) ) ) {
             if ( $check_only ) {
                 return FALSE;
             }
