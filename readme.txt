@@ -46,7 +46,8 @@ No, the backup is done by creating additional tables in the same database so if 
 == Changelog ==
 = 2.2 =
 * fix broken RegEx's which failed to match some SQL operations as it should
-* support logging SQL SELECT operations 
+* support logging SQL SELECT operations
+* support recovery from backup/restore timeout failure
 = 2.1.1 =
 * fix diff tool so that it correctly handles tables with multiple primary keys
 = 2.1.0.2 =
@@ -72,6 +73,7 @@ No, the backup is done by creating additional tables in the same database so if 
 = 2.2 =
 * fix broken RegEx's which failed to match some SQL operations as it should
 * support logging SQL SELECT operations 
+* support recovery from backup/restore timeout failure
 = 2.1.1 =
 * fix diff tool so that it correctly handles tables with multiple primary keys
 = 2.1.0.2 =
