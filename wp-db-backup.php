@@ -600,11 +600,18 @@ if ( defined( 'DOING_AJAX' ) ) {
         $tables_not_to_do = $_REQUEST;
         $status           = DDT_SUCCESS;
         # restore all tables that have a backup copy
+        if ( !count( array_filter( $_REQUEST, function( $value ) {
+            return $value === DDT_RESTORED;
+        } ) ) ) {
+            # This is the initial restore request so remove any earlier restore status results - restore requests may be done multiple times on a given backup
+            ddt_set_status( 'restore started',   [ ] );
+            ddt_set_status( 'restore completed', [ ] );
+        }
         foreach ( $tables as $table ) {
             if ( !empty( $_REQUEST[ $table ] ) && $_REQUEST[ $table ] === DDT_RESTORED ) {
                 continue;
             }
-            $started = ddt_get_status( 'restore started' );
+            $started    = ddt_get_status( 'restore started' );
             $started[ ] = $table;
             ddt_set_status( 'restore started', $started );
             # drop the table to be restored
@@ -624,9 +631,9 @@ if ( defined( 'DOING_AJAX' ) ) {
                 break;
             }
             $tables_not_to_do[ $table ] = DDT_RESTORED;
-            $started = ddt_get_status( 'restore completed' );
-            $started[ ] = $table;
-            ddt_set_status( 'restore completed', $started );
+            $completed    = ddt_get_status( 'restore completed' );
+            $completed[ ] = $table;
+            ddt_set_status( 'restore completed', $completed );
             if ( ( count( $tables_not_to_do ) - count( $_REQUEST ) ) >= $delta ) {
                 break;
             }
