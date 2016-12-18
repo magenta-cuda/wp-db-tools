@@ -419,10 +419,6 @@ function ddt_wp_db_diff_init( ) {
                 }
                 $operation = 'SELECT';
                 $where     = ( $matches[ 5 ] ? '' : ' 1=1 ' ) . $matches[ 7 ];
-                if ( !$matches[ 5 ] ) {
-                    error_log( 'SELECT:$last_query=' . $last_query );
-                    error_log( 'SELECT:$matches=' . print_r( $matches, true ) );
-                }    
                 # fix fields with table name prefix
                 $as        = $matches[ 3 ];
                 $where     = preg_replace( "#([^A-Za-z]){$table}\.#", "\$1{$table}{$suffix}.", $where );
