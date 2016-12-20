@@ -502,7 +502,7 @@ function ddt_wp_db_diff_init( ) {
         $ids[ 'INSERT' ] = in_array( 'INSERT', $operation ) ? array_diff( $current_ids, $original_ids )      : [ ];
         $ids[ 'UPDATE' ] = in_array( 'UPDATE', $operation ) ? array_intersect( $current_ids, $original_ids ) : [ ];
         $ids[ 'DELETE' ] = in_array( 'DELETE', $operation ) ? array_diff( $original_ids, $current_ids )      : [ ];
-        $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? stringify_ids( array_diff( $ids[ 'SELECT' ], $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) ) : [ ];
+        $ids[ 'SELECT' ] = in_array( 'SELECT', $operation ) ? array_diff( stringify_ids( $ids[ 'SELECT' ] ), $ids[ 'UPDATE' ], $ids[ 'DELETE' ] ) : [ ];
         sort( $ids[ 'INSERT' ] );
         sort( $ids[ 'UPDATE' ] );
         sort( $ids[ 'DELETE' ] );
