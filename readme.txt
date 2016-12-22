@@ -4,7 +4,7 @@ Donate link:
 Tags: database, diff, backup, tool, testing
 Requires at least: 3.6
 Tested up to: 4.7
-Stable tag: 2.2
+Stable tag: 2.2.0.1
 License: GPLv2 or later
 License URI: http://www.gnu.org/licenses/gpl-2.0.html
 WordPress database tools for debugging.
@@ -44,6 +44,8 @@ No, the backup is done by creating additional tables in the same database so if 
 3. Diff Tool - Detail View
 
 == Changelog ==
+= 2.2.0.1 =
+* fix a small bug with SELECT with multiple primary keys
 = 2.2 =
 * fix broken RegEx's which failed to match some SQL operations as it should
 * support logging SQL SELECT operations
@@ -70,6 +72,8 @@ No, the backup is done by creating additional tables in the same database so if 
 * Initial release.
   
 == Upgrade Notice ==
+= 2.2.0.1 =
+* fix a small bug with SELECT with multiple primary keys
 = 2.2 =
 * fix broken RegEx's which failed to match some SQL operations as it should
 * support logging SQL SELECT operations 

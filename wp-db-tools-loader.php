@@ -4,7 +4,7 @@
 Plugin Name: Database Debugging Tools for Developers
 Plugin URI:  https://wpdbdt.wordpress.com/
 Description: Database tools for WordPress developers
-Version:     2.2
+Version:     2.2.0.1
 Author:      Magenta Cuda
 Author URI:  https://profiles.wordpress.org/magenta-cuda/
 License:     GPL2
